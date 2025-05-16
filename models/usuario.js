@@ -21,8 +21,7 @@ function Usuario(email, senha, perguntaSeguranca) {
     this.senha = senha;
 
     if (pergunta && resposta ) {
-        this.pergunta = pergunta;
-        this.resposta = resposta;
+        this.perguntaSeguranca = { pergunta: pergunta, resposta: resposta };
     }
 }
 
@@ -37,17 +36,16 @@ exports.create = async function (usuarioArg) {
     }
 
     const conn = await dbo.createConnection();
+    const json = JSON.stringify(usuario);
 
-    try {
-        const [ results ] = await conn.execute(
-            `CALL usuario(?, ?)`,
-            ['insert', JSON.stringify(usuario)]
-        );
+    console.log('cadastrando ', json);
 
-        return results;
-    } catch (err) {
+    const [ results ] = await conn.execute(
+        `CALL usuario(?, ?)`,
+        ['insert', json]
+    ).catch(err => {
+        throw err;
+    });
 
-        console.log(err);
-        throw Error('Erro ao cadastrar usuário');
-    }
+    return results;
 };
