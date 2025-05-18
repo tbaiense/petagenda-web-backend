@@ -1,8 +1,36 @@
 const { createHmac } = require('node:crypto');
 
+exports.generateJWT = function(usuario) {
+    const { id, e_admin } = usuario;
+
+    const header = Buffer.from(JSON.stringify({
+        alg: "HS256",
+        typ: "JWT"
+    }))
+    .toString('base64url');
+
+    const payload = Buffer.from(JSON.stringify({
+        iss: "petagenda-backend",
+        exp: Math.floor(Date.now() / 1000 + 120), // Dois minutos no futuro
+        user: id,
+        admin: (e_admin == 'Y') ? true : false
+    }))
+    .toString('base64url');
+
+
+    const hash = createHmac('sha256', process.env.JWT_HMAC_SECRET ?? 'petagenda');
+    hash.update(header + "." + payload);
+    const signature = hash.digest('base64url');
+
+    const jwt = `${header}.${payload}.${signature}`;
+
+    return jwt;
+};
+
+
 exports.parseJWT = function (req, res, next) {
     const authHeader = req.headers["authorization"];
-
+    console.log(req.headers);
     if (authHeader) {
         const encoded = authHeader.split(" ")[1];
 
@@ -47,15 +75,7 @@ exports.verifyJWT = function (jwt) {
         throw new Error('signature diferente');
     }
 
-    if (jwt.payload.iss !== "petagenda-backend") {
-        throw new Error('issuer desconhecido');
-    }
-
     if (jwt.payload.exp <= Math.floor(Date.now() / 1000)) {
         throw new Error('token expirado');
-    }
-
-    if (jwt.payload.token !== '123token') { // TODO: buscar no banco o token
-        throw new Error('token inválido');
     }
 };

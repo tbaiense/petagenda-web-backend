@@ -1,9 +1,9 @@
 const mysql = require('mysql2/promise');
 
 const config = {
-    host: '127.0.0.1',
-    user: 'petagenda',
-    password: 'petagenda',
+    host: process.env.PETAGENDA_BACKEND_DB_HOST ?? '127.0.0.1',
+    user: process.env.PETAGENDA_BACKEND_DB_USER ?? 'petagenda',
+    password: process.env.PETAGENDA_BACKEND_DB_PASSWORD ?? 'petagenda',
 };
 
 function setEmpresa(id) {

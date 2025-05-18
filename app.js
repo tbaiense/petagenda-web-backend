@@ -12,7 +12,7 @@ app.use(setHeaders);
 app.use(router);
 
 app.use((err, req, res, next) => {
-    console.log('erro em função assíncrona: ', err);
+    console.log('erro ao realizar operação: ', err.message);
 
     res.status(400).json({
         success: false,

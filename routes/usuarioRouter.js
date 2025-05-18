@@ -10,7 +10,15 @@ router.route('/')
     .get(usuarioController.list)
     .post(usuarioController.create);
 
-router.post('/login', usuarioController.login);
+    router.post('/login', usuarioController.login, (err, req, res, next) => {
+            res.status(500).json({
+                success: false,
+                message: "Falha ao realizar login",
+                errors: [
+                    err
+                ]
+            });
+        });
 
 router.route('/:idUsuario')
     .get(usuarioController.info)
