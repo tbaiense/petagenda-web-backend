@@ -18,7 +18,7 @@ app.use((err, req, res, next) => {
         success: false,
         message: "Falha ao realizar a operação",
         errors: [
-            err
+            err.message
         ]
     });
 });

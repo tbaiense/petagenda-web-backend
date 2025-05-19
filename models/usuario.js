@@ -53,7 +53,7 @@ exports.create = async function (usuarioArg) {
 };
 
 // Encontrar usuário com base em filtros
-exports.find = async function (filter = undefined, ...options) {
+exports.find = async function (filter = undefined, options = undefined) {
     if (arguments.length == 1) {
         if (!(filter instanceof Object)) {
             throw new TypeError('Filter não é objeto');
