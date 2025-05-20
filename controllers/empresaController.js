@@ -1,9 +1,13 @@
 const Empresa = require('../models/empresa');
 
 exports.list = function (req, res) {
-    res.send('empresa list work');
+    Empresa.find()
+        .then( empresaList => {
+            res.json(empresaList);
+        });
 }
-exports.create = function (req, res, next) {
+
+exports.create = async function (req, res, next) {
     // criar objeto empresa
     const { razaoSocial, nomeFantasia, cnpj, lema, foto, endereco } = req.body;
 
@@ -22,9 +26,11 @@ exports.create = function (req, res, next) {
         return;
     }
 
-    res.json(novaEmpresa);
-
     // salvar no banco
+    novaEmpresa.save().then( id => {
+        res.json({ id: id });
+    });
+
     // associar registro da empresa ao usuário
 }
 exports.info = function (req, res) {

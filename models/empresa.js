@@ -1,16 +1,105 @@
+const  { dbo } = require('../db');
+
 // Model para entidade Empresa
 
-module.exports = class Empresa {
-    #isNew = true;
-    #p_id = undefined;
-    #p_razaoSocial = undefined;
-    #p_cnpj = undefined;
-    #p_nomeFantasia = undefined;
-    #p_lema = undefined;
-    #p_foto = undefined;
-    #p_endereco = undefined;
+/* MODELO DA CLASSE
+ *  {
+ *      "id": 1,
+ *      "nome_bd": "emp_1",
+ *      "licenca": {
+ *          tipo: "corporativo",
+ *          inicio: "2001-01-31 10:45:21",
+ *          fim: "2001-01-31 10:45:21",
+ *      }
+ *      "licenca_empresa": "corporativo",
+ *      "dt_inicio_licenca": null,
+ *      "dt_fim_licenca": null,
+ *
+ *      "cotas": {
+ *          servico: 0,
+ *          relatorioSimples: 0,
+ *          relatorioDetalhado: 0
+ *      },
+ *      "cota_servico": 0,
+ *      "cota_relatorio_simples": 0,
+ *      "cota_relatorio_detalhado": 0,
+ *
+ *      "razao_social": "TB LTDA",
+ *      "nome_fantasia": "Empresa Tamo Bem",
+ *      "cnpj": "00000000000000",
+ *      "foto": null,
+ *      "lema": null
+ *  }
+ */
 
-    static find(filter = undefined, options = undefined) {
+class Empresa {
+    #_isNew = false;
+
+    set isNew(isNew) {
+        this.#_isNew = isNew;
+    }
+
+    get isNew() {
+        return this.#_isNew;
+    }
+
+    #_id;
+    #_licenca;
+
+    set licenca(licenca) {
+        const { tipo, inicio, fim } = licenca;
+
+        if (licenca) {
+            if (typeof licenca !== 'object') throw new TypeError('Informações de licença devem ser Object');
+
+            this.#_licenca = {
+                tipo: tipo,
+                inicio: inicio,
+                fim: fim
+            };
+
+        } else {
+            this.#_licenca = null;
+        }
+    }
+
+    get licenca() {
+        return this.#_licenca;
+    }
+
+
+    #_cotas;
+
+    set cotas(cotas) {
+
+        if (cotas) {
+            const { servico, relatorioSimples, relatorioDetalhado } = cotas;
+            if (typeof cotas !== 'object') throw new TypeError('Informações de cotas devem ser Object');
+
+            this.#_cotas = {
+                servico: servico,
+                relatorioSimples: relatorioSimples,
+                relatorioDetalhado: relatorioDetalhado
+            };
+
+        } else {
+            this.#_cotas = null;
+        }
+    }
+
+    get cotas() {
+        return this.#_cotas;
+    }
+
+    #_razaoSocial;
+    #_cnpj;
+    #_nomeFantasia;
+    #_lema;
+    #_foto;
+    #_endereco;
+
+
+    static async find(filter = { id: undefined, cnpj: undefined }, options = { limit: 10, page: 0 }) {
         if (filter && !(filter instanceof Object)) {
             throw new TypeError('Filter deve ser Object');
         }
@@ -19,23 +108,102 @@ module.exports = class Empresa {
             throw new TypeError('Options deve ser Object');
         }
 
-        if (arguments.length == 1) {
-            const { id, cnpj } = filter; // Object representando a empresa
+        const { id, cnpj } = filter; // Object representando a empresa
+        const { limit, page } = options;
 
-            // Buscar no banco empresas
-            if (Number.isInteger(id)) { // Buscar por id
+        // Buscar no banco empresas
+        let empresaList;
+        if (Number.isInteger(id)) { // Buscar por id
 
-            } else { // Buscar todas (máximo 20)
+        } else {
+            const conn = await dbo.createConnection();
+            const [ results ] = await conn.execute(
+                `SELECT * FROM vw_empresa LIMIT ${limit} OFFSET ${limit * page}`
+            );
 
-            }
+            empresaList = results.map( emp => {
+                let licencaObj;
+                if (emp.licenca_empresa) {
+                    licencaObj = {
+                        tipo: emp.licenca_empresa,
+                    };
 
-            // Definir empresas recebidas com isNew = false;
+                    if (emp.dt_inicio_licenca) {
+                        licencaObj.inicio = emp.dt_inicio_licenca;
+                    }
+
+                    if (emp.dt_fim_licenca) {
+                        licencaObj.fim = emp.dt_fim_licenca;
+                    }
+                }
+
+                let cotasObj;
+                if (Number.isInteger(emp.cota_servico) && Number.isInteger(emp.cota_relatorio_simples) && Number.isInteger(emp.cota_relatorio_detalhado)) {
+                    cotasObj = {
+                        servico: emp.cota_servico,
+                        relatorioSimples: emp.cota_relatorio_simples,
+                        relatorioDetalhado: emp.cota_relatorio_detalhado
+                    };
+                }
+
+                let enderecoObj;
+                if (Number.isInteger(emp.id_endereco)) {
+                    enderecoObj = {
+                        id: emp.id_endereco,
+                        logradouro: emp.logradouro_endereco,
+                        numero: emp.numero_endereco,
+                        bairro: emp.bairro_endereco,
+                        cidade: emp.cidade_endereco,
+                        estado: emp.estado_endereco
+                    };
+                }
+
+                const empInfo = {
+                    id: emp.id,
+                    licenca: licencaObj,
+                    cotas: cotasObj,
+                    cnpj: emp.cnpj,
+                    nomeFantasia: emp.nome_fantasia,
+                    endereco: enderecoObj,
+                };
+
+                if (emp.foto) {
+                    empInfo.foto = emp.foto;
+                }
+
+                if (emp.razao_social) {
+                    empInfo.razaoSocial = emp.razao_social;
+                }
+
+                return new Empresa(empInfo);
+            });
         }
+
+        return empresaList;
     }
 
     // Cria ou atualiza registro de empresa no banco
-    save() {
+    async save() {
+        const conn = await dbo.createConnection();
 
+        // Criar empresa
+        if (this.isNew) {
+            const [ results ] = await conn.execute(
+                'CALL empresa("insert", ?)',
+                [JSON.stringify(this)]
+            );
+
+            const id = results[0][0].id_empresa;
+            return id;
+        } else {
+            const [ results ] = await conn.execute(
+                'CALL empresa("update", ?)',
+                [JSON.stringify(this)]
+            );
+
+            const id = results[0][0].id_empresa;
+            return id;
+        }
         // Definir empresa como isNew = false;
     }
 
@@ -43,14 +211,13 @@ module.exports = class Empresa {
         if (emp instanceof Number) {
             this.id = emp;
         } else {
-            console.log(emp);
-            const { id, razaoSocial, nomeFantasia, cnpj, foto, lema, endereco } = emp;
+            const { id, licenca, cotas, razaoSocial, nomeFantasia, cnpj, foto, lema, endereco } = emp;
 
-            if (id && !Number.isInteger(id)) {
-                throw new TypeError('Id da empresa deve ser inteiro');
+            if (!id) {
+                this.isNew = true;
+            } else {
+                this.id = id
             }
-
-            this.id = id;
 
             if (!nomeFantasia || !cnpj) {
                 throw new Error("Nome fantasia ou CNPJ não informado");
@@ -75,37 +242,50 @@ module.exports = class Empresa {
             if (endereco) {
                 this.endereco = endereco;
             }
+
+            if (licenca) {
+                this.licenca = licenca;
+            }
+
+            if (cotas) {
+                this.cotas = cotas;
+            }
         }
+
     }
 
-    set id(value) {
-        if (!this.p_id && Number.isInteger(value)) {
-            this.p_id = value;
+    set id(id) {
+        if (!this._id) {
+            if (id && !Number.isInteger(id)) {
+                throw new TypeError('Id da empresa deve ser inteiro');
+            }
+
+            this._id = value;
+            this.isNew = false;
         }
     }
 
     get id() {
-        return this.p_id;
+        return this._id;
     }
 
     set nomeFantasia(value) {
-        console.log(value);
         if (typeof value == 'string') {
-            this.p_nomeFantasia = value;
+            this._nomeFantasia = value;
         } else {
             throw new TypeError('Nome fantasia deve ser String');
         }
     }
 
     get nomeFantasia() {
-        return this.p_nomeFantasia;
+        return this._nomeFantasia;
     }
 
     set razaoSocial(value) {
         if (typeof value == 'string') {
-            this.p_razaoSocial = value;
+            this._razaoSocial = value;
         } else if (!value) {
-            this.p_razaoSocial = undefined;
+            this._razaoSocial = undefined;
         } else {
             throw new TypeError("Razão social deve ser String");
         }
@@ -113,91 +293,107 @@ module.exports = class Empresa {
 
 
     get razaoSocial() {
-        return this.p_razaoSocial;
+        return this._razaoSocial;
     }
 
     set cnpj(value) { // TODO: Validar CNPJ
         if (typeof value == 'string') {
-            this.p_cnpj = value;
+            this._cnpj = value;
         } else {
             throw new TypeError('CNPJ deve ser String');
         }
     }
 
     get cnpj() {
-        return this.p_cnpj;
+        return this._cnpj;
     }
 
     set lema(value) {
         if (typeof value == 'string') {
-            this.p_lema = value;
+            this._lema = value;
         } else if (!value) {
-            this.p_lema = undefined;
+            this._lema = undefined;
         } else {
             throw new TypeError("Lema deve ser String");
         }
     }
 
     get lema() {
-        return this.p_lema;
+        return this._lema;
     }
 
     set foto(value) {
         if (typeof value == 'string') {
-            this.p_foto = value;
+            this._foto = value;
         } else if (!value) {
-            this.p_foto = undefined;
+            this._foto = undefined;
         } else {
             throw new TypeError("Foto deve ser String");
         }
     }
 
     get foto() {
-        return this.p_foto;
+        return this._foto;
     }
 
-    set endereco(value) {
-        if (value instanceof Object) {
-            const { logradouro, numero, bairro, cidade, estado } = value;
+    set endereco(endereco) {
+        if (endereco) {
+            if (typeof endereco !== 'object') throw new TypeError('Informações de endereço devem ser Object');
 
-            if (logradouro && typeof logradouro == 'string') {
-                this.p_endereco.logradouro = value;
-            } else {
+            const { id, logradouro, numero, bairro, cidade, estado } = endereco;
+
+            if (!logradouro || typeof logradouro != 'string') {
                 throw new TypeError('Logradouro deve ser String');
             }
 
-            if (numero && typeof numero == 'string') {
-                this.p_endereco.numero = value;
-            } else {
+            if (!numero || typeof numero != 'string') {
                 throw new TypeError('Número deve ser String');
             }
 
-            if (bairro && typeof bairro == 'string') {
-                this.p_endereco.bairro = value;
-            }   else {
+            if (!bairro || typeof bairro != 'string') {
                 throw new TypeError('Bairro deve ser String');
             }
 
-            if (cidade && typeof cidade == 'string') {
-                this.p_endereco.cidade = value;
-            } else {
+            if (!cidade || typeof cidade != 'string') {
                 throw new TypeError('Cidade deve ser String');
             }
 
-            if (estado && typeof estado == 'string') {
-                this.p_endereco.estado = estado;
-            } else {
+            if (!estado || typeof estado != 'string') {
                 throw new TypeError("Estado deve ser String");
             }
 
-        } else if (!value) {
-            this.p_endereco = undefined;
+            this.#_endereco = {
+                logradouro: logradouro,
+                numero: numero,
+                bairro: bairro,
+                cidade: cidade,
+                estado: estado
+            };
+
+            if (Number.isInteger(id)) {
+                this.#_endereco.id = id;
+            }
         } else {
-            throw new TypeError("Endereço deve ser Object");
+            this.#_endereco = null;
         }
+
     }
 
     get endereco() {
-        return this.p_endereco;
+        return this.#_endereco;
+    }
+
+    toJSON() {
+        return {
+            id: this.id,
+            razaoSocial: this.razaoSocial,
+            cnpj: this.cnpj,
+            nomeFantasia: this.nomeFantasia,
+            lema: this.lema,
+            foto: this.foto,
+            endereco: this.endereco,
+        };
     }
 };
+
+module.exports = Empresa;

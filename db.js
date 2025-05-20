@@ -4,6 +4,16 @@ const config = {
     host: process.env.PETAGENDA_BACKEND_DB_HOST ?? '127.0.0.1',
     user: process.env.PETAGENDA_BACKEND_DB_USER ?? 'petagenda',
     password: process.env.PETAGENDA_BACKEND_DB_PASSWORD ?? 'petagenda',
+    decimalNumbers: true,
+    typeCast: function(field, next) {
+        if(field.type === 'BIT' && field.length === 1) {
+            return (field.string() === '1');
+        } else if (field.type === 'DATE' || field.type === 'DATETIME') {
+            return field.string();
+        } else {
+            return next();
+        }
+    }
 };
 
 function setEmpresa(id) {
@@ -28,15 +38,19 @@ const dbo = {
 const empresa = {
     prefix: 'emp_',
     database: null,
-    createConnection: function () {
+    createConnection: async function () {
         if (!this.database) {
             throw Error('Empresa não foi definida para conexão');
         }
 
-        return mysql.createConnection({
+        const conn = mysql.createConnection({
             database: this.database, 
             ...config
         });
+
+        await conn.execute('CALL dbo.set_empresa_atual(1)');
+
+        return conn;
     }
 };
 module.exports = { dbo, empresa, setEmpresa };
