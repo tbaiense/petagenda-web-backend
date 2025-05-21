@@ -11,7 +11,7 @@ exports.generateJWT = function(usuario) {
 
     const payload = Buffer.from(JSON.stringify({
         iss: "petagenda-backend",
-        exp: Math.floor(Date.now() / 1000 + 120), // Dois minutos no futuro
+        exp: Math.floor(Date.now() / 1000 + 900), // Dois minutos no futuro
         user: id,
         admin: (e_admin == 'Y') ? true : false
     }))
@@ -30,7 +30,6 @@ exports.generateJWT = function(usuario) {
 
 exports.parseJWT = function (req, res, next) {
     const authHeader = req.headers["authorization"];
-    console.log(req.headers);
     if (authHeader) {
         const encoded = authHeader.split(" ")[1];
 

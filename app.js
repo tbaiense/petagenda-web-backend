@@ -2,13 +2,13 @@ const express = require('express');
 const router = require('./router');
 const db = require('./db');
 const setHeaders = require('./utils/setHeaders');
-
+const { parseJWT } = require('./utils/jwt');
 const PORT = 3000;
 
 const app = express();
 
 app.use(setHeaders);
-
+app.use(parseJWT);
 app.use(router);
 
 app.use((err, req, res, next) => {

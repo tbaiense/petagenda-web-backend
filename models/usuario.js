@@ -7,15 +7,15 @@ function Usuario(email, senha, perguntaSeguranca) {
     // if (!(email instanceof String)) {
     //     throw Error('Email não é String');
     // }
-    
+
     // if (!(senha instanceof String)) {
     //     throw Error('Senha não é String');
     // }
-    
+
     // if (perguntaSeguranca && !(perguntaSeguranca instanceof Object)) {
     //     throw Error('Pergunta de segurança não é Object');
     // }
-    
+
     const { pergunta, resposta } = perguntaSeguranca;
     this.email = email;
     this.senha = senha;
@@ -24,6 +24,21 @@ function Usuario(email, senha, perguntaSeguranca) {
         this.perguntaSeguranca = { pergunta: pergunta, resposta: resposta };
     }
 }
+
+exports.setEmpresa = async function (idEmp, idUsr) {
+
+    const conn = await dbo.createConnection();
+    await conn.execute(
+        `CALL set_empresa_usuario(?, ?)`,
+        [idEmp, idUsr]
+    ).catch(err => {
+        conn?.end();
+        throw err;
+    });
+
+    conn?.end();
+    return;
+};
 
 exports.create = async function (usuarioArg) {
     const { email, senha, perguntaSeguranca } = usuarioArg;
@@ -37,8 +52,6 @@ exports.create = async function (usuarioArg) {
 
     const conn = await dbo.createConnection();
     const json = JSON.stringify(usuario);
-
-    console.log('cadastrando ', json);
 
     const [ results ] = await conn.execute(
         `CALL usuario(?, ?)`,
@@ -77,7 +90,6 @@ exports.find = async function (filter = undefined, options = undefined) {
             );
             if (info[0].length > 0) {
                 const [ results ] = info;
-                console.log('info: ', info);
                 usr = results[0];
             }
         } catch (err) {

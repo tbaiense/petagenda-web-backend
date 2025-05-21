@@ -33,6 +33,63 @@ const  { dbo } = require('../db');
  */
 
 class Empresa {
+    static fromResultSet(emp) {
+        let licencaObj;
+        if (emp.licenca_empresa) {
+            licencaObj = {
+                tipo: emp.licenca_empresa,
+            };
+
+            if (emp.dt_inicio_licenca) {
+                licencaObj.inicio = emp.dt_inicio_licenca;
+            }
+
+            if (emp.dt_fim_licenca) {
+                licencaObj.fim = emp.dt_fim_licenca;
+            }
+        }
+
+        let cotasObj;
+        if (Number.isInteger(emp.cota_servico) && Number.isInteger(emp.cota_relatorio_simples) && Number.isInteger(emp.cota_relatorio_detalhado)) {
+            cotasObj = {
+                servico: emp.cota_servico,
+                relatorioSimples: emp.cota_relatorio_simples,
+                relatorioDetalhado: emp.cota_relatorio_detalhado
+            };
+        }
+
+        let enderecoObj;
+        if (Number.isInteger(emp.id_endereco)) {
+            enderecoObj = {
+                id: emp.id_endereco,
+                logradouro: emp.logradouro_endereco,
+                numero: emp.numero_endereco,
+                bairro: emp.bairro_endereco,
+                cidade: emp.cidade_endereco,
+                estado: emp.estado_endereco
+            };
+        }
+
+        const empInfo = {
+            id: emp.id,
+            licenca: licencaObj,
+            cotas: cotasObj,
+            cnpj: emp.cnpj,
+            nomeFantasia: emp.nome_fantasia,
+            endereco: enderecoObj,
+        };
+
+        if (emp.foto) {
+            empInfo.foto = emp.foto;
+        }
+
+        if (emp.razao_social) {
+            empInfo.razaoSocial = emp.razao_social;
+        }
+
+        return empInfo;
+    }
+
     #_isNew = false;
 
     set isNew(isNew) {
@@ -99,7 +156,7 @@ class Empresa {
     #_endereco;
 
 
-    static async find(filter = { id: undefined, cnpj: undefined }, options = { limit: 10, page: 0 }) {
+    static async find(filter, options) {
         if (filter && !(filter instanceof Object)) {
             throw new TypeError('Filter deve ser Object');
         }
@@ -108,8 +165,24 @@ class Empresa {
             throw new TypeError('Options deve ser Object');
         }
 
+        if (!filter) {
+            filter = { id: undefined, cnpj: undefined };
+        } else {
+            if (!Number.isInteger(filter.id)) {
+                filter.id = undefined;
+            }
+
+            if (!Number.isInteger(filter.cnpj)) {
+                filter.cnpj = undefined;
+            }
+        }
+
+        if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
+            options = { limit: 10, page: 0, useClass: false };
+        }
+
         const { id, cnpj } = filter; // Object representando a empresa
-        const { limit, page } = options;
+        const { limit, page, useClass } = options;
 
         // Buscar no banco empresas
         let empresaList;
@@ -117,66 +190,26 @@ class Empresa {
 
         } else {
             const conn = await dbo.createConnection();
-            const [ results ] = await conn.execute(
-                `SELECT * FROM vw_empresa LIMIT ${limit} OFFSET ${limit * page}`
-            );
 
-            empresaList = results.map( emp => {
-                let licencaObj;
-                if (emp.licenca_empresa) {
-                    licencaObj = {
-                        tipo: emp.licenca_empresa,
-                    };
+            if (id) {
+                const [ results ] = await conn.execute(
+                    `SELECT * FROM vw_empresa WHERE id = ? LIMIT 1`,
+                    [id]
+                );
 
-                    if (emp.dt_inicio_licenca) {
-                        licencaObj.inicio = emp.dt_inicio_licenca;
-                    }
+                empresaList = [ results[0] ];
+            } else {
+                const [ results ] = await conn.execute(
+                    `SELECT * FROM vw_empresa ORDER BY id DESC LIMIT ${limit} OFFSET ${limit * page}`
+                );
 
-                    if (emp.dt_fim_licenca) {
-                        licencaObj.fim = emp.dt_fim_licenca;
-                    }
-                }
+                empresaList = results.map( emp => {
+                    const objEmp = Empresa.fromResultSet(emp);
 
-                let cotasObj;
-                if (Number.isInteger(emp.cota_servico) && Number.isInteger(emp.cota_relatorio_simples) && Number.isInteger(emp.cota_relatorio_detalhado)) {
-                    cotasObj = {
-                        servico: emp.cota_servico,
-                        relatorioSimples: emp.cota_relatorio_simples,
-                        relatorioDetalhado: emp.cota_relatorio_detalhado
-                    };
-                }
+                    return useClass ? new Empresa(objEmp) : objEmp;
+                });
+            }
 
-                let enderecoObj;
-                if (Number.isInteger(emp.id_endereco)) {
-                    enderecoObj = {
-                        id: emp.id_endereco,
-                        logradouro: emp.logradouro_endereco,
-                        numero: emp.numero_endereco,
-                        bairro: emp.bairro_endereco,
-                        cidade: emp.cidade_endereco,
-                        estado: emp.estado_endereco
-                    };
-                }
-
-                const empInfo = {
-                    id: emp.id,
-                    licenca: licencaObj,
-                    cotas: cotasObj,
-                    cnpj: emp.cnpj,
-                    nomeFantasia: emp.nome_fantasia,
-                    endereco: enderecoObj,
-                };
-
-                if (emp.foto) {
-                    empInfo.foto = emp.foto;
-                }
-
-                if (emp.razao_social) {
-                    empInfo.razaoSocial = emp.razao_social;
-                }
-
-                return new Empresa(empInfo);
-            });
         }
 
         return empresaList;
@@ -194,15 +227,14 @@ class Empresa {
             );
 
             const id = results[0][0].id_empresa;
+            this.id = id;
             return id;
         } else {
             const [ results ] = await conn.execute(
                 'CALL empresa("update", ?)',
                 [JSON.stringify(this)]
             );
-
-            const id = results[0][0].id_empresa;
-            return id;
+            return this.id;
         }
         // Definir empresa como isNew = false;
     }
@@ -255,37 +287,37 @@ class Empresa {
     }
 
     set id(id) {
-        if (!this._id) {
+        if (!this.#_id) {
             if (id && !Number.isInteger(id)) {
                 throw new TypeError('Id da empresa deve ser inteiro');
             }
 
-            this._id = value;
+            this.#_id = id;
             this.isNew = false;
         }
     }
 
     get id() {
-        return this._id;
+        return this.#_id;
     }
 
     set nomeFantasia(value) {
         if (typeof value == 'string') {
-            this._nomeFantasia = value;
+            this.#_nomeFantasia = value;
         } else {
             throw new TypeError('Nome fantasia deve ser String');
         }
     }
 
     get nomeFantasia() {
-        return this._nomeFantasia;
+        return this.#_nomeFantasia;
     }
 
     set razaoSocial(value) {
         if (typeof value == 'string') {
-            this._razaoSocial = value;
+            this.#_razaoSocial = value;
         } else if (!value) {
-            this._razaoSocial = undefined;
+            this.#_razaoSocial = undefined;
         } else {
             throw new TypeError("Razão social deve ser String");
         }
@@ -293,47 +325,47 @@ class Empresa {
 
 
     get razaoSocial() {
-        return this._razaoSocial;
+        return this.#_razaoSocial;
     }
 
     set cnpj(value) { // TODO: Validar CNPJ
         if (typeof value == 'string') {
-            this._cnpj = value;
+            this.#_cnpj = value;
         } else {
             throw new TypeError('CNPJ deve ser String');
         }
     }
 
     get cnpj() {
-        return this._cnpj;
+        return this.#_cnpj;
     }
 
     set lema(value) {
         if (typeof value == 'string') {
-            this._lema = value;
+            this.#_lema = value;
         } else if (!value) {
-            this._lema = undefined;
+            this.#_lema = undefined;
         } else {
             throw new TypeError("Lema deve ser String");
         }
     }
 
     get lema() {
-        return this._lema;
+        return this.#_lema;
     }
 
     set foto(value) {
         if (typeof value == 'string') {
-            this._foto = value;
+            this.#_foto = value;
         } else if (!value) {
-            this._foto = undefined;
+            this.#_foto = undefined;
         } else {
             throw new TypeError("Foto deve ser String");
         }
     }
 
     get foto() {
-        return this._foto;
+        return this.#_foto;
     }
 
     set endereco(endereco) {
