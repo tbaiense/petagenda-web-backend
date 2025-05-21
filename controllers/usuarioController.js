@@ -3,8 +3,6 @@ const { createHmac } = require('node:crypto');
 const { generateJWT } = require('../utils/jwt');
 
 exports.create = async function (req, res, next) {
-    console.log('recebido ', req.body);
-
     let usr;
     try {
         const { email, senha, perguntaSeguranca: { pergunta, resposta } }  = req.body;
@@ -18,7 +16,6 @@ exports.create = async function (req, res, next) {
             }
         };
     } catch (err) {
-        console.log('errooo: ', err);
         res.status(500).json({
             success: false,
             message: "Objeto inválido para cadastro de usuário",
@@ -46,11 +43,8 @@ exports.login = async function (req, res, next) {
     const usr = await usuarioModel.find(userCredentials)
         .then( usr => {
             if (usr) { // Usuário encontrado
-                console.log('login: usr encontrado >> ', usr);
-
                 try {
                     const jwt = generateJWT(usr);
-                    console.log('jwt gerado: ', jwt);
 
                     res.status(200).json({
                         success: true,
@@ -61,7 +55,6 @@ exports.login = async function (req, res, next) {
                     next(err);
                 }
             } else {
-                console.log('usr não encontrado: ', req.body);
                 res.status(400).send();
             }
         })

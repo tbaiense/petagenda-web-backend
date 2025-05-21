@@ -10,8 +10,7 @@ host: api.petagenda.tbaiense.me
 
 /empresa/:id => GET, PUT, DELETE
 
-/empresa/:id/licenca/ => GET
-/empresa/:id/licenca/atual => 
+/empresa/:id/licenca/ => GET, PUT
 /empresa/:id/licenca/:id/contratar => POST
 
 /empresa/:id/funcionario => GET, POST

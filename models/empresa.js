@@ -186,19 +186,18 @@ class Empresa {
 
         // Buscar no banco empresas
         let empresaList;
-        if (Number.isInteger(id)) { // Buscar por id
+        const conn = await dbo.createConnection();
 
-        } else {
-            const conn = await dbo.createConnection();
-
-            if (id) {
+        try {
+            if (Number.isInteger(id)) { 
                 const [ results ] = await conn.execute(
                     `SELECT * FROM vw_empresa WHERE id = ? LIMIT 1`,
                     [id]
                 );
+                const objEmp = Empresa.fromResultSet(results[0]);
 
-                empresaList = [ results[0] ];
-            } else {
+                empresaList = [ useClass ? new Empresa(objEmp) : objEmp ];
+            } else { // Buscar várias empresas
                 const [ results ] = await conn.execute(
                     `SELECT * FROM vw_empresa ORDER BY id DESC LIMIT ${limit} OFFSET ${limit * page}`
                 );
@@ -209,10 +208,11 @@ class Empresa {
                     return useClass ? new Empresa(objEmp) : objEmp;
                 });
             }
-
+            return empresaList;
+        } catch (err) {
+            conn.end();
+            throw new Error("Falha ao buscar registros de empresa");
         }
-
-        return empresaList;
     }
 
     // Cria ou atualiza registro de empresa no banco
@@ -418,6 +418,7 @@ class Empresa {
     toJSON() {
         return {
             id: this.id,
+            licenca: this.licenca,
             razaoSocial: this.razaoSocial,
             cnpj: this.cnpj,
             nomeFantasia: this.nomeFantasia,

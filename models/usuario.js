@@ -1,7 +1,5 @@
 const { dbo } = require('../db');
 
-
-
 function Usuario(email, senha, perguntaSeguranca) {
     
     // if (!(email instanceof String)) {

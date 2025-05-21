@@ -15,8 +15,6 @@ router.post('/verify-token', parseJWT, (req, res, next) => {
 
     try {
         verifyJWT(req.jwt);
-
-        console.log('jwt aceito!');
         res.json({
             success: true,
             message: 'JWT aceito',
@@ -26,7 +24,6 @@ router.post('/verify-token', parseJWT, (req, res, next) => {
 
         return;
     } catch (err) {
-        console.log('jwt rejeitado! ', req.jwt.header, req.jwt.payload);
         next(err);
     }
 });

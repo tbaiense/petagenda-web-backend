@@ -91,7 +91,7 @@ exports.create = async function (req, res, next) {
 
 }
 exports.info = function (req, res) {
-    Empresa.find({id: req.params.idEmpresa})
+    Empresa.find({id: Number(req.params.idEmpresa)})
         .then( found => {
             res.json({empresa: found[0]});
         }).catch( err => {
