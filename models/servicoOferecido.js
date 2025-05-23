@@ -1,4 +1,4 @@
-const empresaDB = require('../db');
+const { empresa: empresaDB } = require('../db');
 
 /*
 MODELO DE CLASSE PARA SERVIÇO OFERECIDO
@@ -8,7 +8,7 @@ Modelo JSON:
     "id": <INT>,
     "idEmpresa": <INT>,
     "nome": <VARCHAR(64)>,
-    "categoria": ?<INT>,
+    "categoria": <INT>,
     "nomeCategoria": <VARCHAR>
     "preco": <DECIMAL(8,2)>,
     "tipoPreco": <ENUM("pet", "servico")>,  <-- forma de cobrança do preço
@@ -41,7 +41,7 @@ class ServicoOferecido {
     // TODO: anexar restricaoEspecie ao objeto de resposta 
     static async find(filter, options) {} 
 
-    contructor(servicoOferecido) {
+    constructor(servicoOferecido) {
         if (typeof servicoOferecido != 'object') {
             throw new TypeError('servicoOferecido argument must be an object containing information for servicoOferecido');
         }
@@ -59,7 +59,7 @@ class ServicoOferecido {
             restricaoParticipante,
             restricaoEspecie
         } = servicoOferecido;
-
+        
         this.id = id;
         this.idEmpresa = idEmpresa;
         this.nome = nome;
@@ -98,6 +98,7 @@ class ServicoOferecido {
 
         } else if (id == null || id == undefined) {
             this.#_id = undefined;
+            this.isNew = true;
         } else {
             throw new TypeError('id must be an integer or null or undefined');
         }
@@ -110,13 +111,9 @@ class ServicoOferecido {
     #_idEmpresa;
 
     set idEmpresa(idEmpresa) {
-        if (!Number.isInteger(id)) throw new TypeError('id must be an integer');
+        if (!Number.isInteger(idEmpresa)) throw new TypeError('id must be an integer');
 
-        this.#_id = id;
-
-        if (this.isNew) {
-            this.isNew = false;
-        }
+        this.#_idEmpresa = idEmpresa;
     }
 
     get idEmpresa() {
@@ -138,9 +135,11 @@ class ServicoOferecido {
     #_categoria;
 
     set categoria(categoria) {
-        if (!Number.isInteger(categoria)) throw new TypeError('categoria must be an integer');
-
-        this.#_categoria = categoria;
+        if (Number.isInteger(categoria)) {
+            this.#_categoria = categoria;
+        } else {
+            throw new TypeError('categoria must be an integer');
+        }
     }
 
     get categoria() {
@@ -150,7 +149,12 @@ class ServicoOferecido {
     #_nomeCategoria;
 
     set nomeCategoria(nomeCategoria) {
-        if (typeof nomeCategoria != 'string' || nomeCategoria.length < 3) throw new TypeError('nomeCategoria value must be a string with at least 3 characters');
+        if (!nomeCategoria) {
+            this.#_nomeCategoria = undefined;
+            return;
+        } else if (typeof nomeCategoria != 'string' || nomeCategoria.length < 3) {
+            throw new TypeError('nomeCategoria value must be a string with at least 3 characters');
+        }
         // TODO: validar string de nome
         this.#_nomeCategoria = nomeCategoria;
     }
@@ -202,9 +206,7 @@ class ServicoOferecido {
             } else {
                 this.#_descricao = undefined;
             }
-        }
-
-        if ((descricao = descricao.trim()).length == 0) {
+        } else if ((descricao = descricao.trim()).length == 0) {
             this.#_descricao = undefined;
         } else {
             this.#_descricao = descricao;
@@ -254,11 +256,17 @@ class ServicoOferecido {
     set restricaoEspecie(restricaoEspecie) {
         if (!restricaoEspecie) {
             this.#_restricaoEspecie = undefined;
-        } else if (typeof restricaoEspecie == 'object' && Number.isInteger(restricaoEspecie.especie)) {
-            this.#_restricaoEspecie = { 
-                especie: restricaoEspecie.especie, 
-                nomeEspecie: (typeof restricaoEspecie.nomeEspecie == 'string' && restricaoEspecie.nomeEspecie) ? restricaoEspecie.nomeEspecie : undefined
-            };
+        } else if (restricaoEspecie instanceof Array) {
+            this.#_restricaoEspecie = restricaoEspecie.map( restricao => {
+                if (Number.isInteger(restricao.especie)) {
+                    return { 
+                        especie: restricao.especie, 
+                        nomeEspecie: (typeof restricao.nomeEspecie == 'string' && restricao.nomeEspecie) ? restricao.nomeEspecie : undefined
+                    };
+                } else {
+                    throw new TypeError('restricaoEspecie contain objects that do not have a valid especie value: must be integer');
+                }
+            });
         } else {
             throw new Error('restricaoEspecie must be undefined or an object containing especie');
         }
@@ -272,10 +280,12 @@ class ServicoOferecido {
         const conn = await empresaDB.createConnection({ id: this.idEmpresa });
 
         // Criar servicoOferecio
+        const json = JSON.stringify(this);
         if (this.isNew) {
+            
             const [ results ] = await conn.execute(
                 'CALL servico_oferecido("insert", ?)',
-                [JSON.stringify(this)]
+                [json]
             );
 
             const id = results[0][0].id_serv;
@@ -283,8 +293,8 @@ class ServicoOferecido {
             return id;
         } else {
             const [ results ] = await conn.execute(
-                'CALL empresa("update", ?)',
-                [JSON.stringify(this)]
+                'CALL servico_oferecido("update", ?)',
+                [json]
             );
             return this.id;
         }
@@ -293,6 +303,7 @@ class ServicoOferecido {
     toJSON() {
         return {
             id: this.id,
+            idEmpresa: this.idEmpresa,
             nome: this.nome,
             categoria: this.categoria,
             nomeCategoria: this.nomeCategoria,
@@ -300,7 +311,7 @@ class ServicoOferecido {
             tipoPreco: this.tipoPreco,
             descricao: this.descricao,
             foto: this.foto,
-            retricaoParticipante: this.restricaoParticipante,
+            restricaoParticipante: this.restricaoParticipante,
             restricaoEspecie: this.restricaoEspecie,
         };
     }

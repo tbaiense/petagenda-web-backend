@@ -2,26 +2,40 @@ const express = require('express');
 const router = require('./router');
 const db = require('./db');
 const setHeaders = require('./utils/setHeaders');
-const { parseJWT } = require('./utils/jwt');
+const { parseJWT, verifyJWT } = require('./utils/jwt');
 const PORT = 3000;
 
 const app = express();
 
 app.use(setHeaders);
 app.use(parseJWT);
+
+// app.use((req, res, next) => {
+//     try {
+//         verifyJWT(req.jwt);
+//         next();
+//     } catch (err) {
+//         console.log('erro ao verificar token: ', err.message);
+//         next(err);
+//     }
+// });
+
 app.use(router);
 
-app.use((err, req, res, next) => {
-    console.log('erro ao realizar operação: ', err.message);
 
-    res.status(400).json({
-        success: false,
-        message: "Falha ao realizar a operação",
-        errors: [
-            err.message
-        ]
-    });
+app.use((err, req, res, next) => {
+    throw err;
 });
+// app.use((err, req, res, next) => {
+//     console.log(`erro ao realizar operação (${req.METHOD} ${req.url}):`, err.message);
+//     res.status(400).json({
+//         success: false,
+//         message: "Falha ao realizar a operação",
+//         errors: [
+//             err.message
+//         ]
+//     });
+// });
 
 app.listen(PORT, function () {
     console.log('PetAgenda Back-end running on TCP port ', PORT);   

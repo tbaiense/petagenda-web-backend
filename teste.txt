@@ -11,7 +11,11 @@ JSON:
 }
 
 ## CADASTRAR 
-curl --json '{"email": "email@email","senha": "senha","perguntaSeguranca": {"pergunta": "nome do gato","resposta": "josefino"}}' http://localhost:3000/usuario
+curl --json '{"email": "email@email.com","senha": "senha","perguntaSeguranca": {"pergunta": "nome do gato","resposta": "josefino"}}' http://localhost:3000/usuario
+
+## LOGAR (OBTER TOKEN JWT)
+curl --json '{"email": "email@email.com","senha": "senha"}' http://localhost:3000/usuario/login
+
 
 # EMPRESA
 JSON:
@@ -44,4 +48,29 @@ JSON:
 	fim: DateTimeString
 }
 
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODAyMzQ4MSwidXNlciI6MiwiYWRtaW4iOmZhbHNlfQ.Bk2j5xA86yxSGcCG7AK8s1tFcOlwpjv6XMCLKwUR9ZY" --json '{"tipo": "corporativo","inicio": "2000-01-31T10:45:10","fim": "2030-01-31T10:45:10"}' http://localhost:3000/empresa/1/licenca
+curl -H "Authorization: Bearer <jwt>" --json '{"tipo": "corporativo","inicio": "2000-01-31T10:45:10","fim": "2030-01-31T10:45:10"}' http://localhost:3000/empresa/:idEmpresa/licenca
+
+
+# SERVIÇO OFERECIDO
+JSON: 
+{
+	"id": <INT>,
+    "idEmpresa": <INT>,
+    "nome": <VARCHAR(64)>,
+    "categoria": <INT>,
+    "nomeCategoria": <VARCHAR>
+    "preco": <DECIMAL(8,2)>,
+    "tipoPreco": <ENUM("pet", "servico")>,  <-- forma de cobrança do preço
+    "descricao": ?<TEXT>,
+    "foto": ?<TEXT>,   <-- caminho de arquivo "/caminho/image.png"
+    "restricaoParticipante": <ENUM("coletivo", "individual")>,
+    "restricaoEspecie": ?[
+        +{
+            "especie": <INT>  <-- PK da tabela "especie",
+            "nomeEspecie": <varchar>
+        }
+    ]
+}
+
+## CADASTRAR 
+curl -H "Authorization: Bearer <jwt>" --json '{"nome": "Banho","preco": 100.99,"categoria": 2, "tipoPreco": "servico","restricaoParticipante": "individual", "restricaoEspecie": [{"especie": 1}, {"especie": 2}]}' http://localhost:3000/empresa/2/servico-oferecido

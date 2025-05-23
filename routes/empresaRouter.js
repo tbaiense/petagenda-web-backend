@@ -31,6 +31,4 @@ router.route('/:idEmpresa/licenca')
 
 router.use('/:idEmpresa/servico-oferecido', servicoOferecidoRouter);
 
-
-
 module.exports = router;

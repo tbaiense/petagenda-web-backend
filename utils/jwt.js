@@ -31,7 +31,7 @@ exports.generateJWT = function(usuario) {
 exports.parseJWT = function (req, res, next) {
     const authHeader = req.headers["authorization"];
     if (authHeader) {
-        const encoded = authHeader.split(" ")[1];
+        const encoded = authHeader.replace("Bearer", '').trim();
 
         // Verificando signature
         const parts = encoded.split('.');
@@ -65,7 +65,6 @@ exports.parseJWT = function (req, res, next) {
 };
 
 exports.verifyJWT = function (jwt) {
-
     const hmac = createHmac('sha256', 'petagenda');
     hmac.update(jwt.header.encoded + "." + jwt.payload.encoded);
     const digest = hmac.digest('base64url');
