@@ -17,10 +17,13 @@ exports.profile_pic = async function (req, res) {
     }
 };
 
-exports.list = function (req, res) {
+exports.list = function (req, res, next) {
     Empresa.find()
         .then( empresaList => {
-            res.json(empresaList);
+            res.json( { empresas: empresaList });
+        })
+        .catch( err => {
+            next(err);
         });
 }
 
@@ -90,7 +93,7 @@ exports.create = async function (req, res, next) {
     }
 
 }
-exports.info = function (req, res) {
+exports.info = function (req, res, next) {
     Empresa.find({id: Number(req.params.idEmpresa)})
         .then( found => {
             res.json({empresa: found[0]});

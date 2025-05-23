@@ -1,4 +1,4 @@
--- DATA DE ATUALIZAÇÃO: 21/05/2025
+-- DATA DE ATUALIZAÇÃO: 22/05/2025
 
 -- SCHEMA ================================================================================================================================================================
 CREATE SCHEMA
@@ -1215,7 +1215,7 @@ CREATE PROCEDURE servico_oferecido (
                     SET rest_esp_count = rest_esp_count + 1;
                 END WHILE;
             END IF;
-
+			SELECT id_serv;
 
         ELSEIF acao IN ("update", "delete") THEN
             SET id_serv = JSON_EXTRACT(objServ, '$.id');
@@ -1277,6 +1277,8 @@ CREATE PROCEDURE servico_oferecido (
                         DELETE FROM servico_oferecido WHERE id = id_serv;
                 END CASE;
             END IF;
+
+            SELECT id_ser;
         END IF;
     END;$$
 DELIMITER ;
@@ -1376,7 +1378,7 @@ CREATE PROCEDURE cliente (
                     id_cliente, logradouro, numero, bairro, cidade, estado)
                     VALUES (id_cli, logr, num, bairro_end, cid, est);
             END IF;
-
+			SELECT id_cli;
         ELSEIF acao IN ("update", "delete") THEN
             SET id_cli = JSON_EXTRACT(objCliente, '$.id');
 
@@ -1453,6 +1455,7 @@ CREATE PROCEDURE cliente (
                         DELETE FROM cliente WHERE id = id_cli;
                 END CASE;
             END IF;
+        	SELECT id_cli;
         END IF;
     END;$$
 DELIMITER ;
@@ -1510,7 +1513,7 @@ CREATE PROCEDURE pet (
                 id_cliente, id_especie, nome, sexo, porte, e_castrado, estado_saude, raca, cor, comportamento, cartao_vacina)
                 VALUE (id_cli, id_esp, nome_pet, sexo_pet, porte_pet, e_cast, est_saude, raca_pet, cor_pet, comp, cart_vac);
             SET id_pet = LAST_INSERT_ID();
-
+			SELECT id_pet;
         ELSEIF acao IN ("update", "delete") THEN
             SET id_pet = JSON_EXTRACT(objPet, '$.id');
 
@@ -1549,6 +1552,8 @@ CREATE PROCEDURE pet (
                         DELETE FROM pet WHERE id = id_pet;
                 END CASE;
             END IF;
+                    
+        	SELECT id_pet;
         END IF;
     END;$$
 DELIMITER ;
@@ -1794,7 +1799,8 @@ CREATE PROCEDURE agendamento
 
             -- Inserção do agendamento
             INSERT INTO agendamento (id_info_servico, dt_hr_marcada) VALUE (id_info_serv, dt_hr_marc);
-
+			
+            SELECT id_agend;
         ELSEIF acao = "update" THEN
             -- Obtendo o id do agendamento a ser atualizado
             SET id_agend = JSON_EXTRACT(objAgend, '$.id');
@@ -1823,6 +1829,8 @@ CREATE PROCEDURE agendamento
 
             -- Altera registro do servico_realizad
             UPDATE agendamento SET dt_hr_marcada = dt_hr_marc WHERE id = id_agend;
+            
+            SELECT id_agend;
         END IF;
     END;$$
 DELIMITER ;
@@ -1886,7 +1894,8 @@ CREATE PROCEDURE servico_realizado
 
             -- Inserção do serviço realizado
             INSERT INTO servico_realizado (id_info_servico, dt_hr_inicio, dt_hr_fim) VALUE (id_info_serv, dt_hr_ini, dt_hr_fin);
-
+			
+            SELECT id_serv_real;
         ELSEIF acao = "update" THEN
             SET id_serv_real = JSON_EXTRACT(objServ, '$.id');
 
@@ -1914,6 +1923,8 @@ CREATE PROCEDURE servico_realizado
 
             -- Altera registro do servico_realizad
             UPDATE servico_realizado SET dt_hr_inicio = dt_hr_ini, dt_hr_fim = dt_hr_fin WHERE id = id_serv_real;
+            
+            SELECT id_serv_real;
         END IF;
     END;$$
 DELIMITER ;
@@ -1960,7 +1971,8 @@ CREATE PROCEDURE incidente (
                 id_servico_realizado, tipo, dt_hr_ocorrido, relato, medida_tomada)
                 VALUE (id_serv_real, tipo_inc, dt_hr_ocorr, rel, med_tom);
             SET id_inc = LAST_INSERT_ID();
-
+			
+        	SELECT id_inc;
         ELSEIF acao IN ("update", "delete") THEN
             SET id_inc = JSON_EXTRACT(objInc, '$.id');
 
@@ -1993,6 +2005,8 @@ CREATE PROCEDURE incidente (
                         DELETE FROM incidente WHERE id = id_inc;
                 END CASE;
             END IF;
+                    
+            SELECT id_inc;
         END IF;
     END;$$
 DELIMITER ;
@@ -2094,6 +2108,7 @@ CREATE PROCEDURE pacote_agend (
                 SET p_count = p_count + 1;
             END WHILE;
 
+            SELECT id_pac;
         ELSEIF acao IN ("update", "delete") THEN
             SET id_pac = JSON_EXTRACT(objPac, '$.id');
 
@@ -2189,6 +2204,8 @@ CREATE PROCEDURE pacote_agend (
                         DELETE FROM pacote_agend WHERE id = id_pac; /* refential action nas tabelas dias e pets garantem a exclusão delas */
                 END CASE;
             END IF;
+                    
+            SELECT id_pac;
         END IF;
     END;$$
 DELIMITER ;

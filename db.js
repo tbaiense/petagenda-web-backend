@@ -58,7 +58,7 @@ const empresa = {
     
             // Alterando arquivo para criar SCHEMA de acordo com ID da empresa
             const newScriptContent = baseScriptContent.replace(/emp_\?/g, `${this.prefix}${idEmpresa}`);
-            console.log('criandoooooo schema')
+
             // Salvando script temporáriamente
             const EMPRESA_SCHEMA_NEW_SCRIPT = path.join(SQL_TMP_DIR, `${idEmpresa}.sql`);
     

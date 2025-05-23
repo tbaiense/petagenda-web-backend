@@ -1,0 +1,47 @@
+# USUARIO
+JSON: 
+{
+	"id": <INT>,
+	"email": <VARCHAR(128)>,
+	"senha": <VARCHAR(32)>,
+	"perguntaSeguranca": ?{
+		"pergunta": <VARCHAR(64)>,
+		"resposta": <VARCHAR(32)>
+	}
+}
+
+## CADASTRAR 
+curl --json '{"email": "email@email","senha": "senha","perguntaSeguranca": {"pergunta": "nome do gato","resposta": "josefino"}}' http://localhost:3000/usuario
+
+# EMPRESA
+JSON:
+{
+	"id": <INT>,  <--- id do empresa
+	"razaoSocial": ?<VARCHAR(128)>,
+	"nomeFantasia": <VARCHAR(128)>,
+	"cnpj": <CHAR(14)>,
+	"foto": ?<TEXT>,
+	"lema": ?<VARCHAR(180)>,
+	"endereco": ?{  <--- omitir para remover
+		"logradouro": <VARCHAR(128)>,
+		"numero": <VARCHAR(16)> ,
+		"bairro": <VARCHAR(64)>,
+		"cidade": <VARCHAR(64)>,
+		"estado": <CHAR(2)>     <-- Sigla da unidade federativa (ex: "DF", "ES")
+	}
+}
+
+## CADASTRAR
+curl -H "Authorization: Bearer <jwt>" --json '{"cnpj": "1234567890","razaoSocial": "Empresa LTDA","nomeFantasia": "Empresa legal","lema": "Trabalha e confia","endereco": {"logradouro": "Avenida Brasil","numero": "123","bairro": "Bairro Legal","cidade": "Cidade Legal","estado": "ES"}}' http://localhost:3000/empresa
+
+
+# LICENÇA
+JSON:
+{
+	idEmpresa: Number, <-- SERÁ INFERIDO PELO PARÂMETRO :idEmpresa na URL
+	tipo: Enum("basico", "profissional", "corporativo"),
+	inicio: DateTimeString,
+	fim: DateTimeString
+}
+
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODAyMzQ4MSwidXNlciI6MiwiYWRtaW4iOmZhbHNlfQ.Bk2j5xA86yxSGcCG7AK8s1tFcOlwpjv6XMCLKwUR9ZY" --json '{"tipo": "corporativo","inicio": "2000-01-31T10:45:10","fim": "2030-01-31T10:45:10"}' http://localhost:3000/empresa/1/licenca

@@ -8,7 +8,7 @@ Modelo JSON:
     tipo: Enum("basico", "profissional", "corporativo"),
     inicio: DateTimeString,
     fim: DateTimeString
-    }
+}
     */
    
 class Licenca {

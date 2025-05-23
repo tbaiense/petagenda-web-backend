@@ -2,18 +2,19 @@ const express = require('express');
 const router = express.Router();
 
 const bodyParser = require('body-parser');
+
 const empresaController = require('../controllers/empresaController');
-const licencaController = require('../controllers/licencaController')
-const serveStatic = require('serve-static');
+const licencaController = require('../controllers/licencaController');
+
+const servicoOferecidoRouter = require('./servicoOferecidoRouter');
 
 router.use(bodyParser.json({limit: '5mb'}));
+
 const appPath = require('../path');
 
 router.route('/')
     .get(empresaController.list)
     .post(empresaController.create);
-
-
 
 router.route('/:idEmpresa')
     .get(empresaController.info)
@@ -27,4 +28,9 @@ router.route('/:idEmpresa/licenca')
     .get(licencaController.info)
     .post(licencaController.set)
     .put(licencaController.set);
+
+router.use('/:idEmpresa/servico-oferecido', servicoOferecidoRouter);
+
+
+
 module.exports = router;
