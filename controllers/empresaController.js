@@ -66,7 +66,7 @@ exports.create = async function (req, res, next) {
                 await handle.writeFile(foto.data, { encoding: 'base64' });
 
                 // atualizar usuário com link da foto
-                novaEmpresa.foto = `/empresa/${idEmpresa}/pic_emp_${idEmpresa}.jpg`;
+                novaEmpresa.foto = `/empresa/${idEmpresa}/servico-oferecido/foto`;
 
                 await novaEmpresa.save();
             } catch (err) {

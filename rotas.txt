@@ -18,7 +18,7 @@ host: api.petagenda.tbaiense.me
 
 
 /empresa/:id/servico-oferecido => GET, POST
-/empresa/:id/servico-oferecido/:id => GET, PUT, DELETE
+/empresa/:id/servico-oferecido/:idServicoOferecido => GET, PUT, DELETE
 
 /empresa/:id/cliente => GET, POST
 /empresa/:id/cliente/:id => GET, PUT, DELETE

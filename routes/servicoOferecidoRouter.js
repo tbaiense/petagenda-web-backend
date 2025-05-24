@@ -9,4 +9,11 @@ router.route('/')
     })
     .post(servicoOferecidoController.create);
 
+route.route('/:idServicoOferecido')
+    .get(servicoOferecidoController.list)
+    .put(servicoOferecidoController.update)
+    .delete(servicoOferecidoController.delete);
+
+route.route('/:idServicoOferecido/foto')
+    .get(servicoOferecidoController.servico_pic);
 module.exports = router;

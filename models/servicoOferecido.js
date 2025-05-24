@@ -1,4 +1,4 @@
-const { empresa: empresaDB } = require('../db');
+const { ServicoOferecido: ServicoOferecidoDB } = require('../db');
 
 /*
 MODELO DE CLASSE PARA SERVIÇO OFERECIDO
@@ -6,7 +6,7 @@ MODELO DE CLASSE PARA SERVIÇO OFERECIDO
 Modelo JSON:
 {   
     "id": <INT>,
-    "idEmpresa": <INT>,
+    "idServicoOferecido": <INT>,
     "nome": <VARCHAR(64)>,
     "categoria": <INT>,
     "nomeCategoria": <VARCHAR>
@@ -39,7 +39,60 @@ class ServicoOferecido {
     }
 
     // TODO: anexar restricaoEspecie ao objeto de resposta 
-    static async find(filter, options) {} 
+    static async find(filter, options) {
+        if (filter && !(filter instanceof Object)) {
+            throw new TypeError('Filter deve ser Object');
+        }
+
+        if (options && !(options instanceof Object)) {
+            throw new TypeError('Options deve ser Object');
+        }
+
+        if (!filter || typeof filter != 'object' || !Number.isInteger(filter.idServicoOferecido)) {
+            throw new Error('filter parameter must be an object and contain at least idServicoOferecido that is an integer');
+        }
+        
+        if (!Number.isInteger(filter.id)) {
+            filter.id = undefined;
+        }
+
+        if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
+            options = { limit: 10, page: 0, useClass: false };
+        }
+
+        const { id, idServicoOferecido } = filter; // Object representando a servicoOferecido
+        const { limit, page, useClass } = options;
+
+        // Buscar no banco servicos oferecidos
+        let servicoList;
+        const conn = await ServicoOferecidoDB.createConnection({ id: idServicoOferecido });
+
+        try {
+            if (Number.isInteger(id)) { 
+                const [ results ] = await conn.execute(
+                    `SELECT * FROM servico_oferecido WHERE id = ? LIMIT 1`,
+                    [id]
+                );
+                const objServ = ServicoOferecido.fromResultSet(results[0]);
+
+                servicoList = [ useClass ? new ServicoOferecido(objServ) : objServ ];
+            } else { // Buscar várias ServicoOferecidos
+                const [ results ] = await conn.execute(
+                    `SELECT * FROM servico_oferecido ORDER BY id DESC LIMIT ${limit} OFFSET ${limit * page}`
+                );
+
+                servicoList = results.map( emp => {
+                    const objServ = ServicoOferecido.fromResultSet(emp);
+
+                    return useClass ? new ServicoOferecido(objServ) : objServ;
+                });
+            }
+            return servicoList;
+        } catch (err) {
+            conn.end();
+            throw new Error("Falha ao buscar registros de ServicoOferecido");
+        }
+    } 
 
     constructor(servicoOferecido) {
         if (typeof servicoOferecido != 'object') {
@@ -48,7 +101,7 @@ class ServicoOferecido {
 
         const {
             id,
-            idEmpresa,
+            idServicoOferecido,
             nome,
             categoria,
             nomeCategoria,
@@ -61,7 +114,7 @@ class ServicoOferecido {
         } = servicoOferecido;
         
         this.id = id;
-        this.idEmpresa = idEmpresa;
+        this.idServicoOferecido = idServicoOferecido;
         this.nome = nome;
         this.categoria = categoria;
         this.nomeCategoria = nomeCategoria;
@@ -108,16 +161,16 @@ class ServicoOferecido {
         return this.#_id;
     }
 
-    #_idEmpresa;
+    #_idServicoOferecido;
 
-    set idEmpresa(idEmpresa) {
-        if (!Number.isInteger(idEmpresa)) throw new TypeError('id must be an integer');
+    set idServicoOferecido(idServicoOferecido) {
+        if (!Number.isInteger(idServicoOferecido)) throw new TypeError('id must be an integer');
 
-        this.#_idEmpresa = idEmpresa;
+        this.#_idServicoOferecido = idServicoOferecido;
     }
 
-    get idEmpresa() {
-        return this.#_idEmpresa;
+    get idServicoOferecido() {
+        return this.#_idServicoOferecido;
     }
 
     #_nome;
@@ -277,7 +330,7 @@ class ServicoOferecido {
     }
 
     async save() {
-        const conn = await empresaDB.createConnection({ id: this.idEmpresa });
+        const conn = await ServicoOferecidoDB.createConnection({ id: this.idServicoOferecido });
 
         // Criar servicoOferecio
         const json = JSON.stringify(this);
@@ -303,7 +356,7 @@ class ServicoOferecido {
     toJSON() {
         return {
             id: this.id,
-            idEmpresa: this.idEmpresa,
+            idServicoOferecido: this.idServicoOferecido,
             nome: this.nome,
             categoria: this.categoria,
             nomeCategoria: this.nomeCategoria,
