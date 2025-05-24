@@ -46,18 +46,20 @@ const empresa = {
         if (!Number.isInteger(idEmpresa)) {
             throw new TypeError('id de empresa deve ser inteiro para criar schema');
         }
-
-        const plat = os.platform();
+        
         let baseScriptHandle;
         let newScriptHandle;
         let errorObj;
+        const schemaName = `${this.prefix}${idEmpresa}`;
         try {
+            const plat = os.platform();
+
             // Lendo script de criação de SCHEMA
             baseScriptHandle = await fs.open(EMPRESA_SCHEMA_BASE_SCRIPT, 'r');
             const baseScriptContent = await fs.readFile(baseScriptHandle, 'utf8');
     
             // Alterando arquivo para criar SCHEMA de acordo com ID da empresa
-            const newScriptContent = baseScriptContent.replace(/emp_\?/g, `${this.prefix}${idEmpresa}`);
+            const newScriptContent = baseScriptContent.replace(/emp_\?/g, schemaName);
 
             // Salvando script temporáriamente
             const EMPRESA_SCHEMA_NEW_SCRIPT = path.join(SQL_TMP_DIR, `${idEmpresa}.sql`);
@@ -65,30 +67,34 @@ const empresa = {
             newScriptHandle = await fs.open(EMPRESA_SCHEMA_NEW_SCRIPT, 'w');
             await fs.writeFile(newScriptHandle, newScriptContent);
     
+            baseScriptHandle?.close();
+            newScriptHandle?.close();
+
             const mysqlPath = appPath.MYSQL_CLIENT_EXEC_PATH ?? 'mysql';
             let cmd;
             if (plat == 'linux') {
-                cmd = shell.spawnSync(mysqlPath, ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4','-e', `source ${EMPRESA_SCHEMA_NEW_SCRIPT}`]);
+                cmd = shell.spawnSync('mysql', ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4','-e', `source ${EMPRESA_SCHEMA_NEW_SCRIPT}`]);
             } else if (plat == 'win32') {
                 cmd = shell.spawnSync(mysqlPath, ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4', '-e', `source ${EMPRESA_SCHEMA_NEW_SCRIPT}`]);
             } else {
-                throw new Error("Erro ao criar schema de empresa: Sistema operacional não suportado pelo back-end");
+                throw new Error("Sistema operacional não suportado pelo back-end");
             }
-            
+            console.log(cmd);
             await fs.unlink(EMPRESA_SCHEMA_NEW_SCRIPT);
             if (cmd.status) {
-                throw new Error('Falha ao executar comando de criação de SCHEMA de empresa: verifique o PATH do cliente MySQL e tente novamente');
+                throw new Error('Falha ao executar cliente MySQL. Verifique o PATH e tente novamente');
             }
-        } catch (err) {
-            errorObj = err;
-        } finally {
-            baseScriptHandle?.close();
-            newScriptHandle?.close();
-        }
 
+        } catch (err) {
+            err.message = "Falha ao criar SCHEMA para empresa: " + err.message;
+            errorObj = err;
+        }
+        
         if (errorObj) {
             throw errorObj;
         }
+
+        return schemaName;
     },
     createConnection: async function (empConfig) {
         if (!empConfig) {

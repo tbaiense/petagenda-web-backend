@@ -7,6 +7,8 @@ const PORT = 3000;
 
 const app = express();
 
+// Utils middleware
+
 app.use(setHeaders);
 app.use(parseJWT);
 
@@ -20,24 +22,29 @@ app.use(parseJWT);
 //     }
 // });
 
+// Route handling
+
 app.use(router);
 
+// Error handlers
 
 app.use((err, req, res, next) => {
-    throw err;
+    console.error(err);
+    next(err);
 });
-// app.use((err, req, res, next) => {
-//     console.log(`erro ao realizar operação (${req.METHOD} ${req.url}):`, err.message);
-//     res.status(400).json({
-//         success: false,
-//         message: "Falha ao realizar a operação",
-//         errors: [
-//             err.message
-//         ]
-//     });
-// });
 
-app.listen(PORT, function () {
+app.use((err, req, res, next) => {
+    console.log(`erro ao realizar operação (${req.METHOD} ${req.url}):`, err.message);
+    res.status(400).json({
+        success: false,
+        message: "Falha ao realizar a operação",
+        errors: [
+            err.message
+        ]
+    });
+});
+
+app.listen(PORT, '127.1.1.1', function () {
     console.log('PetAgenda Back-end running on TCP port ', PORT);   
 });
 

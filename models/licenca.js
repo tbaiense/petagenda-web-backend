@@ -147,13 +147,15 @@ class Licenca {
         this.fim = fim;
     }
     
-    async save() {
-        const conn = await dbo.createConnection();
-        const { idEmpresa, tipo, inicio, fim } = this;
+    async save(connParam) {
+        if (connParam && typeof connParam != 'object') throw new TypeError('connParam parameter must be undefined or a connection object');
+        const conn = (connParam) ? connParam : await dbo.createConnection();
 
+        const { idEmpresa, tipo, inicio, fim } = this;
         try {
             // Definir se licença existe ou não
             const found = await Licenca.find({ idEmpresa: this.idEmpresa });
+            console.log(found);
             this.isNew = !(found[0].tipo);
             
             // Definir licenca
@@ -169,9 +171,11 @@ class Licenca {
                 await empresaDB.createSchema(idEmpresa);
             }
             this.isNew = false;
+            if (!connParam) conn.end();
             return idEmpresa;
         } catch (err) {
-            conn?.end();
+            if (!connParam) conn.end();
+            err.message = "Falha ao executar cadastro ou atualização de registro de licença de empresa: " + err.message;
             throw err;
         }
     }

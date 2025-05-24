@@ -34,6 +34,10 @@ const  { dbo } = require('../db');
 
 class Empresa {
     static fromResultSet(emp) {
+        if (!emp) {
+           return {}; 
+        }
+
         let licencaObj;
         if (emp.licenca_empresa) {
             licencaObj = {
@@ -181,7 +185,7 @@ class Empresa {
             options = { limit: 10, page: 0, useClass: false };
         }
 
-        const { id, cnpj } = filter; // Object representando a empresa
+        const { id } = filter; // Object representando a empresa
         const { limit, page, useClass } = options;
 
         // Buscar no banco empresas
@@ -208,35 +212,44 @@ class Empresa {
                     return useClass ? new Empresa(objEmp) : objEmp;
                 });
             }
+            conn.end();
             return empresaList;
         } catch (err) {
             conn.end();
-            throw new Error("Falha ao buscar registros de empresa");
+            err.message = "Falha ao buscar registros de empresa: " + err.message;
+            throw err;
         }
     }
 
     // Cria ou atualiza registro de empresa no banco
-    async save() {
-        const conn = await dbo.createConnection();
+    async save(connParam = undefined) {
+        if (connParam && typeof connParam != 'object') throw new TypeError('connParam parameter must be undefined or a connection object');
 
-        // Criar empresa
-        if (this.isNew) {
-            const [ results ] = await conn.execute(
-                'CALL empresa("insert", ?)',
-                [JSON.stringify(this)]
-            );
+        const conn = (connParam) ? connParam : await dbo.createConnection();
+        try {
+            // Criar empresa
+            let idResponse;
+            if (this.isNew) {
+                const [ results ] = await conn.execute(
+                    'CALL empresa("insert", ?)',
+                    [JSON.stringify(this)]
+                );
 
-            const id = results[0][0].id_empresa;
-            this.id = id;
-            return id;
-        } else {
-            const [ results ] = await conn.execute(
-                'CALL empresa("update", ?)',
-                [JSON.stringify(this)]
-            );
-            return this.id;
+                idResponse = results[0][0].id_empresa;
+                this.id = idResponse;
+            } else {
+                const [ results ] = await conn.execute(
+                    'CALL empresa("update", ?)',
+                    [JSON.stringify(this)]
+                );
+            }
+            if (!connParam) conn.end();
+            return idResponse;
+        } catch (err) {
+            if (!connParam) conn.end();
+            err.message = "Falha ao executar cadastro ou atualização de registro de empresa: " + err.message;
+            throw err;
         }
-        // Definir empresa como isNew = false;
     }
 
     constructor(emp) {

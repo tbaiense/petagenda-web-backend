@@ -3,6 +3,7 @@ const usuarioModel = require('../models/usuario');
 const fs = require('node:fs/promises');
 const appPath = require('../path');
 const path = require('node:path');
+const { dbo } = require('../db');
 
 exports.profile_pic = async function (req, res) {
     const caminhoFoto = path.join(appPath.PROFILE_PIC_DIR, `pic_emp_${req.params.idEmpresa}.jpg`);
@@ -20,6 +21,8 @@ exports.profile_pic = async function (req, res) {
 exports.list = function (req, res, next) {
     Empresa.find()
         .then( empresaList => {
+            if (empresaList.length == 0) res.status(404);
+
             res.json( { empresas: empresaList });
         })
         .catch( err => {
@@ -40,6 +43,7 @@ exports.create = async function (req, res, next) {
     const { razaoSocial, nomeFantasia, cnpj, lema, foto, endereco } = req.body;
 
     let novaEmpresa;
+
     try {
         novaEmpresa = new Empresa({
             razaoSocial,
@@ -49,49 +53,68 @@ exports.create = async function (req, res, next) {
             endereco
         });
     } catch (err) {
-        next(new Error('Informações inválidas para criação de empresa: ' + err.message));
+        err.message = "Erro ao instanciar objeto Empresa: " + err.message;
+        next(err);
         return;
     }
 
-    // salvar no banco
-    const idEmpresa = await novaEmpresa.save();
+    // Obtendo conexão
+    let conn;
+    try {
+        conn = await dbo.createConnection();
+    } catch (err) {
+        next(err);
+        return;
+    }
 
-    // Cadastrar foto
-    if (foto && typeof foto == 'object') {
-        if (foto.data && typeof foto.data == 'string') {
-            let linkFoto = path.join(appPath.PROFILE_PIC_DIR, `pic_emp_${idEmpresa}.jpg`);
-            let handle;
-            try {
-                handle = await fs.open(linkFoto, 'w');
-                await handle.writeFile(foto.data, { encoding: 'base64' });
-
-                // atualizar usuário com link da foto
-                novaEmpresa.foto = `/empresa/${idEmpresa}/pic_emp_${idEmpresa}.jpg`;
-
-                await novaEmpresa.save();
-            } catch (err) {
-                console.log('erro ao cadastrar foto: ', err.message);
-            } finally {
-                handle?.close();
+    try {
+        // salvar no banco
+        await conn.query('START TRANSACTION');
+        const idEmpresa = await novaEmpresa.save(conn);
+    
+        // Cadastrar foto
+        if (foto && typeof foto == 'object') {
+            if (foto.data && typeof foto.data == 'string') {
+                let linkFoto = path.join(appPath.PROFILE_PIC_DIR, `pic_emp_${idEmpresa}.jpg`);
+                let handle;
+                try {
+                    handle = await fs.open(linkFoto, 'w');
+                    await handle.writeFile(foto.data, { encoding: 'base64' });
+    
+                    // atualizar usuário com link da foto
+                    novaEmpresa.foto = `/empresa/${idEmpresa}/pic_emp_${idEmpresa}.jpg`;
+    
+                    await novaEmpresa.save();
+                } catch (err) {
+                    console.log('erro ao cadastrar foto: ', err.message);
+                } finally {
+                    handle?.close();
+                }
+    
             }
-
         }
+    
+        // Se está utilizando token
+        if (req.jwt) {
+            // associar registro da empresa ao usuário
+            usuarioModel.setEmpresa(idEmpresa, Number(req.jwt.payload.user))
+                .then(() => {
+                    res.json({ id: idEmpresa });
+                })
+                .catch( err => {
+                    next(err);
+                });
+        } else {
+            res.send();
+        }
+    
+        await conn.query('COMMIT');
+    } catch (err) {
+        await conn.query('ROLLBACK');
+        next(err);
+    } finally {
+        conn.end();
     }
-
-    // Se está utilizando token
-    if (req.jwt) {
-        // associar registro da empresa ao usuário
-        usuarioModel.setEmpresa(idEmpresa, Number(req.jwt.payload.user))
-            .then(() => {
-                res.json({ id: idEmpresa });
-            })
-            .catch( err => {
-                next(err);
-            });
-    } else {
-        res.send();
-    }
-
 }
 exports.info = function (req, res, next) {
     Empresa.find({id: Number(req.params.idEmpresa)})

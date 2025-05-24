@@ -1,28 +1,51 @@
 const Licenca = require('../models/licenca');
+const { dbo } = require('../db');
 
 exports.set = async (req, res, next) => {
-    const { tipo, inicio, fim } = req.body;
-
-    let novaLicenca = {
-        idEmpresa: Number(req.params.idEmpresa),
-        tipo,
-        inicio,
-        fim
-    };
-
+    let novaLicenca;
     try {
+        const { tipo, inicio, fim } = req.body;
+
+        novaLicenca = {
+            idEmpresa: Number(req.params.idEmpresa),
+            tipo,
+            inicio,
+            fim
+        };
+
         novaLicenca = new Licenca(novaLicenca);
     } catch (err) {
-        next(new Error('Informações inválidas para criação de objeto de licença: ' + err.message));
+        err.message = "Erro ao instanciar objeto Licenca: " + err.message;
+        next(err);
         return;
     }
 
-    // salvar no banco
-    await novaLicenca.save();
-    res.json({
-        success: true,
-        message: "Licença atualizada com sucesso!"
-    });
+    // Obtendo conexão
+    let conn;
+    try {
+        conn = await dbo.createConnection();
+    } catch (err) {
+        next(err);
+        return;
+    }
+
+    try {
+        // salvar no banco
+        await conn.query('START TRANSACTION');
+        await novaLicenca.save();
+        res.json({
+            success: true,
+            message: "Licença atualizada com sucesso!"
+        });
+
+        await conn.query('COMMIT');
+    } catch (err) {
+        await conn.query('ROLLBACK');
+        next(err);
+    } finally {
+        conn.end();
+    }
+
 };
 
 exports.info = async (req, res, next) => {
