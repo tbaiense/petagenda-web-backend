@@ -30,23 +30,24 @@ exports.create = async (req, res, next) => {
         restricaoEspecie,
     } = req.body;
     
-    let novoServico = {
-        idEmpresa: Number(req.params.idEmpresa),
-        nome,
-        categoria,
-        nomeCategoria,
-        preco,
-        tipoPreco,
-        descricao,
-        foto,
-        restricaoParticipante,
-        restricaoEspecie,
-    };
-    
+    let novoServico;
     try {
+        novoServico = {
+            idEmpresa: Number(req.params.idEmpresa),
+            nome,
+            categoria,
+            nomeCategoria,
+            preco,
+            tipoPreco,
+            descricao,
+            foto,
+            restricaoParticipante,
+            restricaoEspecie,
+        };
+
         novoServico = new ServicoOferecido(novoServico);
     } catch (err) {
-        // next(new Error('Informações inválidas para criação de objeto de serviço oferecido: ' + err.message));
+        err.message = "Erro ao instanciar objeto ServicoOferecido: " + err.message;
         next(err);
         return;
     }
@@ -75,7 +76,7 @@ exports.create = async (req, res, next) => {
 
                 await novaEmpresa.save();
             } catch (err) {
-                console.log('erro ao cadastrar foto: ', err.message);
+                err.message = "Erro ao cadastrar foto de serviço oferecido: " + err.message;
             } finally {
                 handle?.close();
             }
@@ -90,13 +91,25 @@ exports.create = async (req, res, next) => {
 };
 
 exports.list = function (req, res, next) {
-    
-
-    Empresa.find()
-        .then( empresaList => {
-            res.json( { empresas: empresaList });
+    ServicoOferecido.find()
+        .then( servicoList => {
+            res.json( { servicosOferecidos: servicoList });
         })
         .catch( err => {
             next(err);
         });
+}
+
+
+exports.info = function (req, res) {
+    res.send('info work');
+}
+
+
+exports.update = function (req, res) {
+    res.send('update work');
+}
+
+exports.delete = function (req, res) {
+    res.send('delete work');
 }

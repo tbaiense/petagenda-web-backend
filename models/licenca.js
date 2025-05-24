@@ -5,6 +5,7 @@ MODELO DE LICENÇA DE EMPRESA
 Modelo JSON:
 {
     idEmpresa: Number,
+    temSchema: Boolean,
     tipo: Enum("basico", "profissional", "corporativo"),
     inicio: DateTimeString,
     fim: DateTimeString
@@ -16,6 +17,7 @@ class Licenca {
     static fromResultSet(rs) {
         const licObj = {
             idEmpresa: rs.id,
+            temSchema: rs.tem_schema,
             tipo: rs.licenca_empresa,
             inicio: rs.dt_inicio_licenca,
             fim: rs.dt_fim_licenca
@@ -45,7 +47,7 @@ class Licenca {
             conn = await dbo.createConnection();
             
             const [ results ] = await conn.execute(
-                'SELECT `id`, `licenca_empresa`, `dt_inicio_licenca`, `dt_fim_licenca` FROM `empresa` WHERE `id` = ? LIMIT 1',
+                'SELECT `id`, IF(`nome_bd` IS NOT NULL, TRUE, FALSE) AS tem_schema, `licenca_empresa`, `dt_inicio_licenca`, `dt_fim_licenca` FROM `empresa` WHERE `id` = ? LIMIT 1',
                 [filter.idEmpresa]
             );
             
@@ -89,6 +91,16 @@ class Licenca {
 
     get idEmpresa() {
         return this.#_idEmpresa;
+    }
+
+    #_temSchema;
+
+    set temSchema(temSchema) {
+        this.#_temSchema = !!temSchema;
+    }
+
+    get temSchema() {
+        return this.#_temSchema;
     }
 
     #_tipo;
@@ -136,12 +148,14 @@ class Licenca {
 
         const {
             idEmpresa,
+            temSchema,
             tipo,
             inicio,
             fim
         } = licencaEmpresa;
 
         this.idEmpresa = idEmpresa;
+        this.temSchema = temSchema;
         this.tipo = tipo;
         this.inicio = inicio;
         this.fim = fim;
@@ -156,7 +170,7 @@ class Licenca {
             // Definir se licença existe ou não
             const found = await Licenca.find({ idEmpresa: this.idEmpresa });
             console.log(found);
-            this.isNew = !(found[0].tipo);
+            this.isNew = !(found[0].temSchema);
             
             // Definir licenca
             const [ updateInfo ] = await conn.execute(
