@@ -32,8 +32,8 @@ class ServicoOferecido {
             nomeCategoria: rs.nome_categoria,
             preco: rs.preco,
             tipoPreco: rs.tipo_preco,
-            descricao: rs.descricao,
-            foto: rs.foto,
+            descricao: (rs.descricao) ? rs.descricao : undefined,
+            foto: (rs.foto) ? rs.foto : undefined,
             restricaoParticipante: rs.restricao_participante
         };
 
@@ -396,8 +396,8 @@ class ServicoOferecido {
             nomeCategoria: this.nomeCategoria,
             preco: this.preco,
             tipoPreco: this.tipoPreco,
-            descricao: this.descricao,
-            foto: this.foto,
+            descricao: (this.descricao) ? this.descricao : undefined,
+            foto: (this.foto) ? this.foto : undefined,
             restricaoParticipante: this.restricaoParticipante,
             restricaoEspecie: this.restricaoEspecie,
         };
