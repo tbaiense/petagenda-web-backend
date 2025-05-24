@@ -90,7 +90,6 @@ exports.create = async function (req, res, next) {
                 } finally {
                     handle?.close();
                 }
-    
             }
         }
     

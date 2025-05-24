@@ -1,6 +1,23 @@
 const ServicoOferecido = require('../models/servicoOferecido');
+const fs = require('node:fs/promises');
+const appPath = require('../path');
+const path = require('node:path');
 
-exports.create = (req, res, next) => {
+// TODO: TESTAR!!
+exports.servico_pic = async function (req, res, next) {
+    const caminhoFoto = path.join(appPath.SERVICO_PIC_DIR, `pic_serv_${req.params.idServicoOferecido}_emp_${req.params.idEmpresa}.jpg`);
+
+    try {
+        res.setHeader('Content-Type', 'image/jpeg');
+
+        const imgBuffer = await fs.readFile(caminhoFoto);
+        res.end(imgBuffer);
+    } catch (err) {
+        res.status(404).end();
+    }
+};
+
+exports.create = async (req, res, next) => {
     const { 
         nome,
         categoria,
@@ -35,13 +52,51 @@ exports.create = (req, res, next) => {
     }
 
     // salvar no banco
-    novoServico.save()
-        .then( info => {
-            res.json({
-                success: true,
-                message: "Serviço oferecido cadastrado com sucesso!"
-            });
-        }).catch( err => {
+    let idServicoOferecido
+    try {
+        idServicoOferecido = await novoServico.save();
+    } catch (err) {
+        next(err);
+        return;
+    }
+    
+    // Cadastrar foto
+    // TODO: TESTAR!!
+    if (foto && typeof foto == 'object') {
+        if (foto.data && typeof foto.data == 'string') {
+            let linkFoto = path.join(appPath.SERVICO_PIC_DIR, `pic_serv_${idServicoOferecido}_emp_${idEmpresa}.jpg`);
+            let handle;
+            try {
+                handle = await fs.open(linkFoto, 'w');
+                await handle.writeFile(foto.data, { encoding: 'base64' });
+
+                // atualizar usuário com link da foto
+                novaEmpresa.foto = `/empresa/${idEmpresa}/servico-oferecido/${idServicoOferecido}/foto`;
+
+                await novaEmpresa.save();
+            } catch (err) {
+                console.log('erro ao cadastrar foto: ', err.message);
+            } finally {
+                handle?.close();
+            }
+
+        }
+    }
+    
+    res.json({
+        success: true,
+        message: "Serviço oferecido cadastrado com sucesso!"
+    });
+};
+
+exports.list = function (req, res, next) {
+    
+
+    Empresa.find()
+        .then( empresaList => {
+            res.json( { empresas: empresaList });
+        })
+        .catch( err => {
             next(err);
         });
-};
+}
