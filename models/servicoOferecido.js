@@ -65,30 +65,33 @@ class ServicoOferecido {
         const { limit, page, useClass } = options;
 
         // Buscar no banco servicos oferecidos
-        let servicoList;
+        let servicoList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
 
         try {
-            console.log(filter, options);
             if (Number.isInteger(id)) { 
                 const [ results ] = await conn.execute(
                     `SELECT * FROM vw_servico_oferecido WHERE id_servico_oferecido = ? LIMIT 1`,
                     [id]
                 );
-                const objServ = ServicoOferecido.fromResultSet(results[0]);
-                servicoList = [ useClass ? new ServicoOferecido(objServ) : objServ ];
+
+                if (results.length > 0) {
+                    const objServ = ServicoOferecido.fromResultSet(results[0]);
+                    servicoList = [ useClass ? new ServicoOferecido(objServ) : objServ ];          
+                }
             } else { // Buscar várias ServicoOferecidos
                 const [ results ] = await conn.execute(
                     `SELECT * FROM vw_servico_oferecido ORDER BY id_servico_oferecido DESC LIMIT ${limit} OFFSET ${limit * page}`
                 );
 
-                servicoList = results.map( emp => {
-                    const objServ = ServicoOferecido.fromResultSet(emp);
-
-                    return useClass ? new ServicoOferecido(objServ) : objServ;
-                });
+                if (results.length > 0) {
+                    servicoList = results.map( emp => {
+                        const objServ = ServicoOferecido.fromResultSet(emp);
+    
+                        return useClass ? new ServicoOferecido(objServ) : objServ;
+                    });      
+                }
             }
-            console.log(servicoList);
             // anexar restricaoEspecie ao objeto de resposta
             if (servicoList.length > 0) {
                 const idList = servicoList.map( serv => {
@@ -355,7 +358,7 @@ class ServicoOferecido {
                 }
             });
         } else {
-            throw new Error('restricaoEspecie must be undefined or an object containing especie');
+            throw new Error('restricaoEspecie must be undefined or an array containing especie');
         }
     }
 
@@ -367,23 +370,34 @@ class ServicoOferecido {
         const conn = await empresaDB.createConnection({ id: this.idEmpresa });
 
         // Criar servicoOferecido
-        const json = JSON.stringify(this);
-        if (this.isNew) {
-            
-            const [ results ] = await conn.execute(
-                'CALL servico_oferecido("insert", ?)',
-                [json]
-            );
+        try {
+            const json = JSON.stringify(this);
+            let idResponse;
+            await conn.query('START TRANSACTION');
+            if (this.isNew) {
+                const [ results ] = await conn.execute(
+                    'CALL servico_oferecido("insert", ?)',
+                    [json]
+                );
+    
+                idResponse = results[0][0].id_serv;
+                this.id = idResponse;
+            } else {
+                const [ results ] = await conn.execute(
+                    'CALL servico_oferecido("update", ?)',
+                    [json]
+                );
+                idResponse = this.id;
+            }
 
-            const id = results[0][0].id_serv;
-            this.id = id;
-            return id;
-        } else {
-            const [ results ] = await conn.execute(
-                'CALL servico_oferecido("update", ?)',
-                [json]
-            );
-            return this.id;
+            await conn.query('COMMIT');
+            conn.end();
+            return idResponse;
+        } catch (err) {
+            await conn.query('ROLLBACK');
+            conn.end();
+            err.message = "Falha ao cadastrar ou atualizar registro de serviço oferecido: " + err.message;
+            throw err;
         }
     }
 

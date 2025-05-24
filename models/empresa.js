@@ -189,7 +189,7 @@ class Empresa {
         const { limit, page, useClass } = options;
 
         // Buscar no banco empresas
-        let empresaList;
+        let empresaList = [];
         const conn = await dbo.createConnection();
 
         try {
@@ -198,19 +198,22 @@ class Empresa {
                     `SELECT * FROM vw_empresa WHERE id = ? LIMIT 1`,
                     [id]
                 );
-                const objEmp = Empresa.fromResultSet(results[0]);
 
-                empresaList = [ useClass ? new Empresa(objEmp) : objEmp ];
+                if (results.length > 0) {
+                    const objEmp = Empresa.fromResultSet(results[0]);
+                    empresaList = [ useClass ? new Empresa(objEmp) : objEmp ];
+                }
             } else { // Buscar várias empresas
                 const [ results ] = await conn.execute(
                     `SELECT * FROM vw_empresa ORDER BY id DESC LIMIT ${limit} OFFSET ${limit * page}`
                 );
-
-                empresaList = results.map( emp => {
-                    const objEmp = Empresa.fromResultSet(emp);
-
-                    return useClass ? new Empresa(objEmp) : objEmp;
-                });
+                if (results.length > 0) {
+                    empresaList = results.map( emp => {
+                        const objEmp = Empresa.fromResultSet(emp);
+    
+                        return useClass ? new Empresa(objEmp) : objEmp;
+                    });              
+                }
             }
             conn.end();
             return empresaList;

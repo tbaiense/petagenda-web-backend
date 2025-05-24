@@ -93,7 +93,6 @@ exports.create = async (req, res, next) => {
 exports.list = function (req, res, next) {
     ServicoOferecido.find({ idEmpresa: Number(req.params.idEmpresa)})
         .then( servicoList => {
-            // console.log(servicoList);
             if (servicoList.length == 0) res.status(404);
 
             res.json( { servicosOferecidos: servicoList });
