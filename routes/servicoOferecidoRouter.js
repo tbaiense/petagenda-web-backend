@@ -4,13 +4,11 @@ const router = express.Router({ mergeParams: true });
 const servicoOferecidoController = require('../controllers/servicoOferecidoController');
 
 router.route('/')
-    .get((req, res, next) => {
-        res.send('NOT IMPLEMENTED YET: servico-oferecido LIST');
-    })
+    .get(servicoOferecidoController.list)
     .post(servicoOferecidoController.create);
 
 router.route('/:idServicoOferecido')
-    .get(servicoOferecidoController.list)
+    .get(servicoOferecidoController.info)
     .put(servicoOferecidoController.update)
     .delete(servicoOferecidoController.delete);
 

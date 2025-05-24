@@ -1,4 +1,4 @@
-const { ServicoOferecido: ServicoOferecidoDB } = require('../db');
+const { empresa: empresaDB } = require('../db');
 
 /*
 MODELO DE CLASSE PARA SERVIÇO OFERECIDO
@@ -48,8 +48,8 @@ class ServicoOferecido {
             throw new TypeError('Options deve ser Object');
         }
 
-        if (!filter || typeof filter != 'object' || !Number.isInteger(filter.idServicoOferecido)) {
-            throw new Error('filter parameter must be an object and contain at least idServicoOferecido that is an integer');
+        if (!filter || typeof filter != 'object' || !Number.isInteger(filter.idEmpresa)) {
+            throw new Error('filter parameter must be an object and contain at least idEmpresa that is an integer');
         }
         
         if (!Number.isInteger(filter.id)) {
@@ -60,12 +60,12 @@ class ServicoOferecido {
             options = { limit: 10, page: 0, useClass: false };
         }
 
-        const { id, idServicoOferecido } = filter; // Object representando a servicoOferecido
+        const { id, idEmpresa } = filter; // Object representando a servicoOferecido
         const { limit, page, useClass } = options;
 
         // Buscar no banco servicos oferecidos
         let servicoList;
-        const conn = await ServicoOferecidoDB.createConnection({ id: idServicoOferecido });
+        const conn = await empresaDB.createConnection({ id: idEmpresa });
 
         try {
             if (Number.isInteger(id)) { 
@@ -87,10 +87,13 @@ class ServicoOferecido {
                     return useClass ? new ServicoOferecido(objServ) : objServ;
                 });
             }
+            
+            conn.end();
             return servicoList;
         } catch (err) {
+            err.message = "Falha ao buscar registros de ServicoOferecido: " + err.message; 
             conn.end();
-            throw new Error("Falha ao buscar registros de ServicoOferecido");
+            throw err;
         }
     } 
 

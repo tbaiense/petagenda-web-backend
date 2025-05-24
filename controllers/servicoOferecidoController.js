@@ -91,8 +91,10 @@ exports.create = async (req, res, next) => {
 };
 
 exports.list = function (req, res, next) {
-    ServicoOferecido.find()
+    ServicoOferecido.find({ idEmpresa: Number(req.params.idEmpresa)})
         .then( servicoList => {
+            if (servicoList.length == 0) res.status(404);
+
             res.json( { servicosOferecidos: servicoList });
         })
         .catch( err => {
@@ -102,7 +104,15 @@ exports.list = function (req, res, next) {
 
 
 exports.info = function (req, res) {
-    res.send('info work');
+    ServicoOferecido.find({ id: Number(req.param.idServicoOferecido), idEmpresa: Number(req.params.idEmpresa)})
+        .then( servicoFound => {
+            if (!servicoFound[0]) res.status(404);
+
+            res.json( { servicoOferecido: servicoFound[0] ?? {} });
+        })
+        .catch( err => {
+            next(err);
+        });
 }
 
 
