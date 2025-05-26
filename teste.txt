@@ -93,3 +93,29 @@ JSON:
 
 ## CADASTRAR
 curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "João Bobão","telefone": "(27) 99888-7766","exerce": [{"id": 4 },{"id": 2 },{"id": 3 }]}' http://api.petagenda.local:3000/empresa/1/funcionario
+
+
+# CLIENTE
+JSON:
+{
+	"id": <INT>,
+    "idEmpresa": <INT>,
+    "nome": <VARCHAR(64)>,
+    "telefone": <CHAR(15)>,
+    "servicoRequerido": ?[
+        +{ "servico": <INT>, "nome": <VARCHAR(64)> }
+    ],
+    "endereco": {
+        "logradouro": <VARCHAR(128)>,
+        "numero": <VARCHAR(16)> ,
+        "bairro": <VARCHAR(64)>,
+        "cidade": <VARCHAR(64)>,
+        "estado": <CHAR(2)>     <-- Sigla da unidade federativa (ex: "DF", "ES")
+    }
+}
+
+## CADASTRAR
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "Maria Molenga","telefone": "(27) 99888-7766", "servicoRequerido": [{ "servico": 3 }, { "servico": 5 }], "endereco": { "logradouro": "Av. Feliz", "numero": "123", "bairro": "Bairro Alegre", "cidade": "Cidade genial", "estado": "ES"}}' http://api.petagenda.local:3000/empresa/1/cliente
+
+
+

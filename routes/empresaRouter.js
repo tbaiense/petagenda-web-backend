@@ -8,6 +8,7 @@ const licencaController = require('../controllers/licencaController');
 
 const servicoOferecidoRouter = require('./servicoOferecidoRouter');
 const funcionarioRouter = require('./funcionarioRouter');
+const clienteRouter = require('./clienteRouter');
 
 router.use(bodyParser.json({limit: '5mb'}));
 
@@ -32,5 +33,7 @@ router.route('/:idEmpresa/licenca')
 
 router.use('/:idEmpresa/servico-oferecido', servicoOferecidoRouter);
 router.use('/:idEmpresa/funcionario', funcionarioRouter);
+router.use('/:idEmpresa/cliente', clienteRouter);
+
 
 module.exports = router;

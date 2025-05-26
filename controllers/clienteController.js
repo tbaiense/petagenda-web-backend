@@ -3,7 +3,7 @@ const { empresa: empresaDB } = require('../db');
 
 exports.create = async (req, res, next) => {
     const {
-        id, nome, telefone, endereco, servicoRequerido
+        nome, telefone, endereco, servicoRequerido
     } = req.body;
 
     let novoCliente;
@@ -11,9 +11,8 @@ exports.create = async (req, res, next) => {
     try {
         novoCliente = {
             idEmpresa,
-            id, nome, telefone, endereco, servicoRequerido
+            nome, telefone, endereco, servicoRequerido
         };
-
         novoCliente = new Cliente(novoCliente);
     } catch (err) {
         err.message = "Erro ao instanciar objeto Cliente: " + err.message;

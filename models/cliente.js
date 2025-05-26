@@ -24,8 +24,27 @@ JSON:
 
 class Cliente {
 
+    static fromResultSet(rs) {
+        const objCliente = {
+            id: rs.id_cliente,
+            nome: rs.nome,
+            telefone: rs.telefone,
+            endereco: (rs.logradouro_end) ?
+                {
+                    logradouro: rs.logradouro_end,
+                    numero: rs.numero_end,
+                    bairro: rs.bairro_end,
+                    cidade: rs.cidade_end,
+                    estado: rs.estado_end
+                }
+                : undefined
+        };
+
+        return objCliente;
+    }
+
     // TODO: finalizar
-    async static find(filter, options) {
+    static async find(filter, options) {
         if (filter && !(filter instanceof Object)) {
             throw new TypeError('Filter deve ser Object');
         }
@@ -56,17 +75,16 @@ class Cliente {
         try {
             if (Number.isInteger(id)) {
                 const [ results ] = await conn.execute(
-                    'SELECT `id` AS `id_funcionario`, `nome`, `telefone` FROM `funcionario` WHERE `id` = ? LIMIT 1',
+                    'SELECT * FROM `vw_cliente` WHERE `id_cliente` = ? LIMIT 1',
                     [id]
                 );
-                console.log();
                 if (results.length > 0) {
                     const objFunc = Cliente.fromResultSet(results[0]);
                     cliList = [ useClass ? new Cliente(objFunc) : objFunc ];
                 }
             } else { // Buscar várias Clientes
                 const [ results ] = await conn.execute(
-                    `SELECT id AS id_funcionario, nome, telefone FROM funcionario ORDER BY id DESC LIMIT ${limit} OFFSET ${limit * page}`
+                    `SELECT * FROM vw_cliente ORDER BY id_cliente DESC LIMIT ${limit} OFFSET ${limit * page}`
                 );
 
                 if (results.length > 0) {
@@ -77,32 +95,32 @@ class Cliente {
                     });
                 }
             }
-            // anexar servico_exercido ao objeto de resposta
+            // anexar servico_requerido ao objeto de resposta
             if (cliList.length > 0) {
                 const idList = cliList.map( func => {
                     return func.id;
                 });
 
                 const idListStr = idList.join(",");
-                const [ servExerc ] = await conn.execute( // NESTE MOMENTO -- APENAS NESTE MOMENTO --, EU AMO JAVASCRIPT <3
-                `SELECT id_funcionario, id_servico_oferecido, nome_servico FROM vw_servico_exercido WHERE id_funcionario IN (${idListStr})`
+                const [ servReq ] = await conn.execute( // NESTE MOMENTO -- APENAS NESTE MOMENTO --, EU AMO JAVASCRIPT <3
+                `SELECT id_cliente, id_servico_requerido, nome_servico FROM vw_servico_requerido WHERE id_cliente IN (${idListStr})`
                 );
 
-                servExerc.forEach( res => {
+                servReq.forEach( res => {
                     const {
-                        id_funcionario: idFunc,
-                        id_servico_oferecido: id,
+                        id_cliente: idCli,
+                        id_servico_requerido: id,
                         nome_servico: nome
                     } = res;
 
-                    const index = cliList.findIndex( func => {
-                        return func.id === idFunc;
+                    const index = cliList.findIndex( cli => {
+                        return cli.id === idCli;
                     });
 
-                    if (!cliList[index].exerce) {
-                        cliList[index].exerce = [];
+                    if (!cliList[index].servicoRequerido) {
+                        cliList[index].servicoRequerido = [];
                     }
-                    cliList[index].exerce.push({servico: id, nome: nome});
+                    cliList[index].servicoRequerido.push({servico: id, nome: nome});
                 });
             }
             conn.end();
@@ -112,6 +130,20 @@ class Cliente {
             conn.end();
             throw err;
         }
+    }
+
+    #_isNew = true;
+
+    set isNew(isNew) {
+        if (typeof isNew != 'boolean') {
+            throw new TypeError('isNew value must be boolean');
+        }
+
+        this.#_isNew = isNew;
+    }
+
+    get isNew() {
+        return this.#_isNew;
     }
 
     #_id;
@@ -139,11 +171,11 @@ class Cliente {
     #_idEmpresa;
 
     set idEmpresa(idEmpresa) {
-        if (!Number.isInteger(idEmpresa)) {
-            throw new TypeError('idEmpresa must be an integer');
+        if (Number.isInteger(idEmpresa)) {
+            this.#_idEmpresa = idEmpresa;
+        } else {
+            this.#_idEmpresa = undefined;
         }
-
-        this.#_idEmpresa = idEmpresa;
     }
 
     get idEmpresa() {
@@ -181,9 +213,9 @@ class Cliente {
             this.#_servicoRequerido = undefined;
         } else if (servicoRequerido instanceof Array) {
             this.#_servicoRequerido = servicoRequerido.map( serv => {
-                if (Number.isInteger(serv.id)) {
+                if (Number.isInteger(serv.servico)) {
                     return {
-                        servico: serv.id,
+                        servico: serv.servico,
                         nome: (typeof serv.nome == 'string' && serv.nome) ? serv.nome : undefined
                     };
                 } else {
@@ -204,22 +236,20 @@ class Cliente {
     set endereco(endereco) {
         if (!endereco) {
             throw new TypeError('endereco parameter must be an object, cannot be null or undefined');
-        } else if (endereco instanceof Array) {
-            this.#_endereco = endereco.map( end => {
-                if (end.logradouro && end.numero && end.bairro && end.cidade && end.estado) {
-                    return {
-                        logradouro: end.logradouro,
-                        numero: end.numero,
-                        bairro: end.bairro,
-                        cidade: end.cidade,
-                        estado: end.estado
+        } else if (typeof endereco == 'object' && !(endereco instanceof Array)) {
+                if (endereco.logradouro && endereco.numero && endereco.bairro && endereco.cidade && endereco.estado) {
+                    this.#_endereco = {
+                        logradouro: endereco.logradouro,
+                        numero: endereco.numero,
+                        bairro: endereco.bairro,
+                        cidade: endereco.cidade,
+                        estado: endereco.estado
                     };
                 } else {
                     throw new TypeError('endereco object is missing one or more required properties: logradouro, numero, bairro, cidade or estado');
                 }
-            });
         } else {
-            throw new Error('endereco must be undefined or an array containing Endereco objects');
+            throw new Error('endereco must be undefined or contain an Endereco object');
         }
     }
 
@@ -227,7 +257,7 @@ class Cliente {
         return this.#_endereco;
     }
 
-    contructor(cliente) {
+    constructor(cliente) {
         if (!cliente || typeof cliente != 'object' || cliente instanceof Array) {
             throw new TypeError('cliente parameter must be an object containing Cliente properties');
         }
@@ -251,11 +281,11 @@ class Cliente {
 
     async save(connParam) {
         if (connParam && typeof connParam != 'object') throw new TypeError('connParam parameter must be undefined or a connection object');
-
         const conn = (connParam) ? connParam : await empresaDB.createConnection({ id: this.idEmpresa });
         // Criar Cliente
         try {
             const json = JSON.stringify(this);
+
             let idResponse;
             if (this.isNew) {
                 const [ results ] = await conn.execute(
@@ -284,13 +314,15 @@ class Cliente {
 
 
     toJSON() {
-        return {
-            id,
-            nome,
-            telefone,
-            endereco,
-            servicoRequerido: (servicoRequerido) ? servicoRequerido : undefined
-        } = this;
+        const  objJson = {
+            id: this.id,
+            nome: this.nome,
+            telefone: this.telefone,
+            endereco: this.endereco,
+            servicoRequerido: (this.servicoRequerido) ? this.servicoRequerido : undefined
+        };
+
+        return objJson;
     }
 
     toString() {}
