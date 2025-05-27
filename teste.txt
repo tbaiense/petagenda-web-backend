@@ -11,10 +11,10 @@ JSON:
 }
 
 ## CADASTRAR 
-curl --json '{"email": "email@email.com","senha": "senha","perguntaSeguranca": {"pergunta": "nome do gato","resposta": "josefino"}}' http://api.petagenda.local:3000/usuario
+curl --json '{"email": "email@email.com","senha": "senha","perguntaSeguranca": {"pergunta": "nome do gato","resposta": "josefino"}}' http://localhost:3000/usuario
 
 ## LOGAR (OBTER TOKEN JWT)
-curl --json '{"email": "email@email.com","senha": "senha"}' http://api.petagenda.local:3000/usuario/login
+curl --json '{"email": "email@email.com","senha": "senha"}' http://localhost:3000/usuario/login
 
 
 # EMPRESA
@@ -36,7 +36,7 @@ JSON:
 }
 
 ## CADASTRAR
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"cnpj": "1234567890","razaoSocial": "Empresa LTDA","nomeFantasia": "Empresa legal","lema": "Trabalha e confia","endereco": {"logradouro": "Avenida Brasil","numero": "123","bairro": "Bairro Legal","cidade": "Cidade Legal","estado": "ES"}}' http://api.petagenda.local:3000/empresa
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"cnpj": "1234567890","razaoSocial": "Empresa LTDA","nomeFantasia": "Empresa legal","lema": "Trabalha e confia","endereco": {"logradouro": "Avenida Brasil","numero": "123","bairro": "Bairro Legal","cidade": "Cidade Legal","estado": "ES"}}' http://localhost:3000/empresa
 
 
 # LICENÇA
@@ -48,7 +48,7 @@ JSON:
 	fim: DateTimeString
 }
 
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"tipo": "corporativo","inicio": "2000-01-31T10:45:10","fim": "2030-01-31T10:45:10"}' http://api.petagenda.local:3000/empresa/1/licenca
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"tipo": "corporativo","inicio": "2000-01-31T10:45:10","fim": "2030-01-31T10:45:10"}' http://localhost:3000/empresa/1/licenca
 
 
 # SERVIÇO OFERECIDO
@@ -73,7 +73,7 @@ JSON:
 }
 
 ## CADASTRAR 
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "Banho","preco": 100.99,"categoria": 2, "tipoPreco": "servico","restricaoParticipante": "individual", "restricaoEspecie": [{"especie": 1}, {"especie": 2}]}' http://api.petagenda.local:3000/empresa/1/servico-oferecido
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "Banho","preco": 100.99,"categoria": 2, "tipoPreco": "servico","restricaoParticipante": "individual", "restricaoEspecie": [{"especie": 1}, {"especie": 2}]}' http://localhost:3000/empresa/1/servico-oferecido
 
 
 # FUNCIONÁRIO
@@ -92,7 +92,7 @@ JSON:
 }
 
 ## CADASTRAR
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "João Bobão","telefone": "(27) 99888-7766","exerce": [{"id": 4 },{"id": 2 },{"id": 3 }]}' http://api.petagenda.local:3000/empresa/1/funcionario
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "João Bobão","telefone": "(27) 99888-7766","exerce": [{"id": 4 },{"id": 2 },{"id": 3 }]}' http://localhost:3000/empresa/1/funcionario
 
 
 # CLIENTE
@@ -115,7 +115,35 @@ JSON:
 }
 
 ## CADASTRAR
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "Maria Molenga","telefone": "(27) 99888-7766", "servicoRequerido": [{ "servico": 3 }, { "servico": 5 }], "endereco": { "logradouro": "Av. Feliz", "numero": "123", "bairro": "Bairro Alegre", "cidade": "Cidade genial", "estado": "ES"}}' http://api.petagenda.local:3000/empresa/1/cliente
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "Maria Molenga","telefone": "(27) 99888-7766", "servicoRequerido": [{ "servico": 3 }, { "servico": 5 }], "endereco": { "logradouro": "Av. Feliz", "numero": "123", "bairro": "Bairro Alegre", "cidade": "Cidade genial", "estado": "ES"}}' http://localhost:3000/empresa/1/cliente
+
+
+# PET
+JSON:
+{
+	"id": <INT>, <--- id do pet
+        "idEmpresa": <INT>,
+        "dono": {
+            "id": <INT>,   <--- id do dono do pet (PK da tabela "pet")
+            "nome": <VARCHAR>
+        },
+        "especie": {
+            "id": <INT>, <--- id da espécie do pet (PK da tabela "especie")
+            "nome": <VARCHAR>
+        },
+        "nome": <VARCHAR(64)>,
+        "sexo": <ENUM("M", "F")>,
+        "porte": <ENUM("P", "M", "G")>,
+        "eCastrado": boolean,   <-- situação de castração do pet
+        "estadoSaude": <VARCHAR(32)>,
+        "raca": ?<VARCHAR(64)>,
+        "cor": ?<VARCHAR(32)>,
+        "comportamento": ?<VARCHAR(64)>,    <-- descrição do comportamento
+        "cartaoVacina": ?<TEXT>,   <--- caminho para o cartão de vacina no sistema de arquivos ("/caminho/cartao_vacina.pdf")
+}
+
+## CADASTRAR
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"dono": {"id": 2},"especie": {"id": 1},"nome": "Frederico","sexo":"M","porte": "P","eCastrado": false,"estadoSaude": "saudável","raca": "Shi-tzu","cor": "Branco e caramelo","comportamento": "Agitado","cartaoVacina": "/caminho/cartao_vacina.pdf"}' http://localhost:3000/empresa/2/pet
 
 
 

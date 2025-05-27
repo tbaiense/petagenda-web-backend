@@ -44,7 +44,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-app.listen(PORT, '127.1.1.1', function () {
+app.listen(PORT, '0.0.0.0', function () {
     console.log('PetAgenda Back-end running on TCP port ', PORT);   
 });
 

@@ -19,6 +19,7 @@ const config = {
     user: process.env.PETAGENDA_BACKEND_DB_USER ?? 'petagenda',
     password: process.env.PETAGENDA_BACKEND_DB_PASSWORD ?? 'petagenda',
     decimalNumbers: true,
+    charset: 'utf8mb4',
     typeCast: function(field, next) {
         if(field.type === 'BIT' && field.length === 1) {
             return (field.string() === '1');
@@ -79,7 +80,6 @@ const empresa = {
             } else {
                 throw new Error("Sistema operacional não suportado pelo back-end");
             }
-            console.log(cmd);
             await fs.unlink(EMPRESA_SCHEMA_NEW_SCRIPT);
             if (cmd.status) {
                 throw new Error('Falha ao executar cliente MySQL. Verifique o PATH e tente novamente');

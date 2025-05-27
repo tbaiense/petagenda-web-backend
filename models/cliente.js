@@ -79,8 +79,8 @@ class Cliente {
                     [id]
                 );
                 if (results.length > 0) {
-                    const objFunc = Cliente.fromResultSet(results[0]);
-                    cliList = [ useClass ? new Cliente(objFunc) : objFunc ];
+                    const objCli = Cliente.fromResultSet(results[0]);
+                    cliList = [ useClass ? new Cliente(objCli) : objCli ];
                 }
             } else { // Buscar várias Clientes
                 const [ results ] = await conn.execute(
@@ -88,17 +88,17 @@ class Cliente {
                 );
 
                 if (results.length > 0) {
-                    cliList = results.map( emp => {
-                        const objFunc = Cliente.fromResultSet(emp);
+                    cliList = results.map( cli => {
+                        const objCli = Cliente.fromResultSet(cli);
 
-                        return useClass ? new Cliente(objFunc) : objFunc;
+                        return useClass ? new Cliente(objCli) : objCli;
                     });
                 }
             }
             // anexar servico_requerido ao objeto de resposta
             if (cliList.length > 0) {
-                const idList = cliList.map( func => {
-                    return func.id;
+                const idList = cliList.map( cli => {
+                    return cli.id;
                 });
 
                 const idListStr = idList.join(",");
