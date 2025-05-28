@@ -48,7 +48,7 @@ JSON:
 	fim: DateTimeString
 }
 
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"tipo": "corporativo","inicio": "2000-01-31T10:45:10","fim": "2030-01-31T10:45:10"}' http://localhost:3000/empresa/1/licenca
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODM5MDA4MiwidXNlciI6MywiYWRtaW4iOmZhbHNlfQ.IUZq2bSOM3aJIPiwAnBO1RURlQEck11MEdSVbtsPyZU" --json '{"tipo": "corporativo","inicio": "2000-01-31T10:45:10","fim": "2030-01-31T10:45:10"}' http://localhost:3000/empresa/3/licenca
 
 
 # SERVIÇO OFERECIDO

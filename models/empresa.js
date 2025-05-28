@@ -20,6 +20,7 @@ const  { dbo } = require('../db');
  *          relatorioSimples: 0,
  *          relatorioDetalhado: 0
  *      },
+ *
  *      "cota_servico": 0,
  *      "cota_relatorio_simples": 0,
  *      "cota_relatorio_detalhado": 0,

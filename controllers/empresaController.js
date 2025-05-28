@@ -118,7 +118,8 @@ exports.create = async function (req, res, next) {
 exports.info = function (req, res, next) {
     Empresa.find({id: Number(req.params.idEmpresa)})
         .then( found => {
-            res.json({empresa: found[0]});
+            console.log('rodei');
+            res.json({empresa: (found[0]) ? found[0] : {}});
         }).catch( err => {
             next(err);
         });
