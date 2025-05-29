@@ -4,14 +4,25 @@ const { empresa: empresaDB } = require('../db');
  JSON:
  {
     "id": <INT>,
+    "idInfoServico": <INT>,
     "idEmpresa": <INT>,
     "dtHrMarcada": <DATETIME>,
     "servico": { "id": <INT> },
+    "valor": {
+        "servico": <DECIMAL>,
+        "pets": <DECIMAL>,
+        "total": <DECIMAL>
+    }
     "funcionario": { "id": <INT> },
+    "estado": {
+        "id": <ENUM('criado','preparado','pendente','concluido','cancelado')>,
+        "nome": ?<VARCHAR(32)>
+    }
     "observacoes": ?<VARCHAR(250)>,
     "pets" : ?[
         +{
-            "id": <INT>,
+            "id": ?<INT>,
+            "idPetServico": ?<INT>,
             "alimentacao": ?<TEXT>,
             "remedios": ?[
                 +{ "id": <INT>, "nome": ?<VARCHAR(128)>, "instrucoes": ?<TEXT> }
@@ -67,6 +78,22 @@ class Agendamento {
         return this.#_id;
     }
 
+    #_idInfoServico;
+
+    set idInfoServico(idInfoServico) {
+        if (Number.isInteger(idInfoServico)) {
+            this.#_idInfoServico = idInfoServico;
+
+        } else if (idInfoServico == null || idInfoServico == undefined) {
+            this.#_idInfoServico = undefined;
+        } else {
+            throw new TypeError('idInfoServico must be an integer or null or undefined');
+        }
+    }
+
+    get idInfoServico() {
+        return this.#_idInfoServico;
+    }
 
     #_idEmpresa;
 
@@ -112,6 +139,24 @@ class Agendamento {
         return this.#_servico;
     }
 
+    #_valor;
+
+    set valor(valor) {
+        if (valor && typeof valor == 'object') {
+            this.#_valor = {
+                servico: valor.servico,
+                pets: valor.pets,
+                total: valor.total
+            };
+        } else {
+            this.#_valor = undefined;
+        }
+    }
+
+    get valor() {
+        return this.#_valor;
+    }
+
     #_funcionario;
 
     set funcionario(funcionario) {
@@ -121,10 +166,56 @@ class Agendamento {
             this.#_funcionario = {
                 ...funcionario
             };
-
+        } else if (funcionario == undefined || funcionario == null) {
+            this.#_funcionario = undefined;
         } else {
             throw new TypeError('Objeto de funcionario do pet não pode ser nulo');
         }
+    }
+
+    #_estado;
+
+    set estado(estado) {
+        if (estado && typeof estado == 'object') {
+
+            const objEstado = {
+                id: estado.id,
+            };
+
+            switch (estado.id) {
+                case 'criado': {
+                    objEstado.nome = "Criado";
+                    break;
+                }
+                case 'preparado': {
+                    objEstado.nome = "Preparado";
+                    break;
+                }
+                case 'pendente': {
+                    objEstado.nome = "Pendente";
+                    break;
+                }
+                case 'concluido': {
+                    objEstado.nome = "Concluído";
+                    break;
+                }
+                case 'cancelado': {
+                    objEstado.nome = "Cancelado";
+                    break;
+                }
+                default: {
+                    throw new Error('valor inválido para estado de agendamento');
+                }
+            }
+
+            this.#_estado = objEstado;
+        } else {
+            this.#_estado = undefined;
+        }
+    }
+
+    get estado() {
+        return this.#_estado;
     }
 
     get funcionario() {
@@ -159,25 +250,27 @@ class Agendamento {
         } else if (pets instanceof Array) {
             this.#_pets = pets.map( pet => {
                 if (Number.isInteger(pet.id)) {
-                    const objPet = {
+                    const objAgend = {
                         id: pet.id,
                         alimentacao: (pet.alimentacao) ? pet.alimentacao : undefined
                     };
                     const remedios = pet.remedios;
 
                     if (remedios && remedios instanceof Array) {
-                        if (!remedios.nome || !remedios.instrucoes) {
-                            throw new Error('Um ou mais registros de remédio para pet não possuem nome e/ou instruções');
-                        }
+                        objAgend.remedios = remedios.map( remedio => {
+                            if (!remedio.nome || !remedio.instrucoes) {
+                                throw new Error('Um ou mais registros de remédio para pet não possuem nome e/ou instruções');
+                            }
 
-                        objPet.remedios = {
-                            id: (Number.isInteger(remedios.id)) ? remedios.id : undefined,
-                            nome: remedios.nome,
-                            instrucoes: remedios.instrucoes
-                        };
+                            return {
+                                id: (Number.isInteger(remedio.id)) ? remedio.id : undefined,
+                                nome: remedio.nome,
+                                instrucoes: remedio.instrucoes
+                            };
+                        });
                     }
 
-                    return objPet;
+                    return objAgend;
                 } else {
                     throw new TypeError('pets contain objects that do not have a valid id value: must be integer');
                 }
@@ -196,9 +289,10 @@ class Agendamento {
     set enderecos(enderecos) {
         if (!enderecos) {
             this.#_enderecos = undefined;
+            return;
         } else if (!(enderecos instanceof Array)) {
             throw new TypeError('Objeto de endereço deve ser vazio ou um vetor contendo no máximo dois endereços');
-        } else if (endereco.length > 2) {
+        } else if (enderecos.length > 2) {
             throw new Error("Não é permitido atribuir mais de dois endereços ao agendamento");
         }
 
@@ -226,6 +320,7 @@ class Agendamento {
                 };
             });
         } else {
+            throw new TypeError('endereço deve ser um objeto ou indefinido');
         }
     }
 
@@ -233,20 +328,284 @@ class Agendamento {
         return this.#_enderecos;
     }
 
-    async save(connParam) {
+    constructor(agendamento) {
+        if (!agendamento || typeof agendamento != 'object') {
+            throw new TypeError('parâmetro de agendamento para construtor deve ser um objeto contendo as informações necessárias');
+        }
+
+        const {
+            id,
+            idEmpresa,
+            dtHrMarcada,
+            servico,
+            funcionario,
+            estado,
+            observacoes,
+            pets,
+            enderecos,
+        } = agendamento;
+
+        this.id = id;
+        this.idEmpresa = idEmpresa;
+        this.dtHrMarcada = dtHrMarcada;
+        this.servico = servico;
+        this.funcionario = funcionario;
+        this.estado = estado;
+        this.observacoes = observacoes;
+        this.pets = pets;
+        this.enderecos = enderecos;
 
     }
 
-    static async find(filter, options) {}
+    async save(connParam) {
+        if (connParam && typeof connParam != 'object') {
+            throw new TypeError('Parâmetro de conexão é inválido para função de salvamento de agendamento');
+        }
 
-    static fromResultSet(rs) {}
+        const conn = (connParam) ? connParam : await empresaDB.createConnection({ id: this.idEmpresa });
+        try {
+            const objAgend = {
+                id: this.id,
+                dtHrMarcada: this.dtHrMarcada,
+                info: {
+                    servico: this.servico.id,
+                    funcionario: this.funcionario?.id,
+                    observacoes: this.observacoes,
+                    pets : this.pets,
+                    enderecos: this.enderecos
+                }
+            };
+
+            const json = JSON.stringify(objAgend);
+            let idResponse;
+            if (this.isNew) {
+                const [ results ] = await conn.execute(
+                    'CALL agendamento("insert", ?)',
+                    [json]
+                );
+
+                idResponse = results[0][0].id_agendamento;
+                this.id = idResponse;
+            } else {
+                const [ results ] = await conn.execute(
+                    'CALL agendamento("update", ?)',
+                    [json]
+                );
+                idResponse = this.id;
+            }
+
+            if (!connParam) conn.end();
+            return idResponse;
+        } catch (err) {
+            if (!connParam) conn?.end();
+
+            err.message = "Falha ao atualizar ou cadastrar agendamento: " + err.message;
+            throw err;
+        }
+    }
+
+    static async find(filter, options) {
+        if (filter && !(filter instanceof Object)) {
+            throw new TypeError('Filter deve ser Object');
+        }
+
+        if (options && !(options instanceof Object)) {
+            throw new TypeError('Options deve ser Object');
+        }
+
+        if (!filter || typeof filter != 'object' || !Number.isInteger(filter.idEmpresa)) {
+            throw new Error('filter parameter must be an object and contain at least idEmpresa that is an integer');
+        }
+
+        if (!Number.isInteger(filter.id)) {
+            filter.id = undefined;
+        }
+
+        if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
+            options = { limit: 10, page: 0, useClass: false };
+        }
+
+        const { id, idEmpresa } = filter; // Object representando o Agendamento
+        const { limit, page, useClass } = options;
+
+        // Buscar no banco agendamentos
+        let agendList = [];
+        const conn = await empresaDB.createConnection({ id: idEmpresa });
+        try {
+            if (Number.isInteger(id)) {
+                const [ results ] = await conn.execute(
+                    'SELECT * FROM `vw_agendamento` WHERE `id_agendamento` = ? LIMIT 1',
+                    [id]
+                );
+                if (results.length > 0) {
+                    const objAgend = Agendamento.fromResultSet(results[0]);
+                    agendList = [ useClass ? new Agendamento(objAgend) : objAgend ];
+                }
+            } else { // Buscar vários Agendamentos
+                const [ results ] = await conn.execute(
+                    `SELECT * FROM vw_agendamento ORDER BY id_agendamento DESC LIMIT ${limit} OFFSET ${limit * page}`
+                );
+
+                if (results.length > 0) {
+                    agendList = results.map( emp => {
+                        const objAgend = Agendamento.fromResultSet(emp);
+
+                        return useClass ? new Agendamento(objAgend) : objAgend;
+                    });
+                }
+            }
+
+            // anexar pets ao objeto de resposta
+            if (agendList.length > 0) {
+                const idList = agendList.map( agend => {
+                    return agend.idInfoServico;
+                });
+
+                const idListStr = idList.join(",");
+                const [ petServ ] = await conn.execute(
+                `SELECT id_pet_servico, id_pet, instrucao_alimentacao, id_info_servico FROM vw_pet_servico WHERE id_info_servico IN (${idListStr})`
+                );
+
+                if (!petServ) {
+                    throw new Error('Falha ao obter registros de pets para agendamento');
+                }
+
+                const idListPetServ = petServ.map( pet => {
+                    return pet.id_pet_servico;
+                });
+
+                const idListPetServStr = idListPetServ.join(',');
+
+                let [ remPetServ ] = await conn.execute(
+                `SELECT id, id_pet_servico, nome, instrucoes FROM remedio_pet_servico WHERE id_pet_servico IN (${idListPetServStr})`
+                );
+
+                // Associando pets aos remédios encontrados
+                let petServList = petServ.map( pet => {
+                    const petServ = {
+                        id: pet.id_pet,
+                        idInfoServico: pet.id_info_servico,
+                        instrucaoAlim: pet.instrucao_alimentacao,
+                        remedios: []
+                    };
+
+                    if (remPetServ) {
+                        remPetServ = remPetServ.flatMap( rem => {
+                            if (rem.id_pet_servico == pet.id_pet_servico) {
+
+                                petServ.remedios.push({
+                                    id: rem.id,
+                                    nome: rem.nome,
+                                    instrucoes: rem.instrucoes
+                                });
+
+                                return [];
+                            } else {
+                                return rem;
+                            }
+                        });
+                    }
+
+                    if (!petServ.remedios) {
+                        petServ.remedios = undefined;
+                    }
+                    return petServ;
+                });
+
+                agendList = agendList.map( agend => {
+                    agend.pets = [];
+
+                    petServList = petServList.flatMap( pet => {
+                        if (pet.idInfoServico == agend.idInfoServico) {
+                            agend.pets.push({
+                                id: pet.id,
+                                instrucaoAlim: pet.instrucaoAlim ?? undefined,
+                                remedios: (pet.remedios?.length > 0) ? pet.remedios : undefined
+                            });
+
+                            return [];
+                        } else {
+                            return pet;
+                        }
+                    });
+
+                    return agend;
+                });
+            }
+
+            conn.end();
+            return agendList;
+        } catch (err) {
+            err.message = "Falha ao buscar registros de Agendamentos: " + err.message;
+            conn.end();
+            throw err;
+        }
+    }
+
+    static fromResultSet(rs) {
+        const objAgend = {
+            "id": rs.id_agendamento,
+            "idInfoServico": rs.id_info_servico,
+            "dtHrMarcada": rs.dt_hr_marcada,
+            "servico": { "id": rs.id_servico_oferecido },
+            "valor": {
+                "servico": rs.valor_servico ?? 0,
+                "pets": (!rs.valor_servico && rs.valor_total) ? rs.valor_total : 0,
+                "total": rs.valor_total ?? 0
+            },
+            "funcionario": (rs.id_funcionario) ? { "id": rs.id_funcionario } : undefined,
+            "estado": { "id": rs.estado },
+            "observacoes": (rs.observacoes) ? rs.observacoes : undefined
+        };
+
+        if (rs.tipo_endereco_buscar != rs.tipo_endereco_devolver) {
+            objAgend.enderecos = [];
+            if (rs.tipo_endereco_buscar) {
+                objAgend.enderecos.push({
+                    "tipo": rs.tipo_endereco_buscar,
+                    "logradouro": rs.logradouro_endereco_buscar,
+                    "numero": rs.numero_endereco_buscar,
+                    "bairro": rs.bairro_endereco_buscar,
+                    "cidade": rs.cidade_endereco_buscar,
+                    "estado": rs.estado_endereco_buscar
+                });
+            }
+
+            if (rs.tipo_endereco_devolver) {
+                objAgend.enderecos.push({
+                    "tipo": rs.tipo_endereco_devolver,
+                    "logradouro": rs.logradouro_endereco_devolver,
+                    "numero": rs.numero_endereco_devolver,
+                    "bairro": rs.bairro_endereco_devolver,
+                    "cidade": rs.cidade_endereco_devolver,
+                    "estado": rs.estado_endereco_devolver
+                });
+            }
+
+            if (!objAgend.enderecos) {
+                objAgend.enderecos = undefined;
+            }
+
+        } else if (rs.tipo_endereco_buscar) {
+            objAgend.enderecos = [{
+                "tipo": rs.tipo_endereco_buscar,
+                "logradouro": rs.logradouro_endereco_buscar,
+                "numero": rs.numero_endereco_buscar,
+                "bairro": rs.bairro_endereco_buscar,
+                "cidade": rs.cidade_endereco_buscar,
+                "estado": rs.estado_endereco_buscar
+            }];
+        }
+        return objAgend;
+    }
 
     toJSON() {
         const objJson = {
             id: this.id,
             dtHrMarcada: this.dtHrMarcada,
             servico: { id: this.servico.id },
-            funcionario: { id: this.funcionario.id },
+            funcionario: (this.funcionario) ? { id: this.funcionario.id } : undefined,
+            estado: (this.estado) ? this.estado : undefined,
             observacoes: this.observacoes,
             pets : this.pets,
             enderecos: this.enderecos
@@ -263,32 +622,35 @@ module.exports = Agendamento;
 
 // TESTES
 
-const objAgend = {
-    "idEmpresa": 1,
-    "dtHrMarcada": '2025-10-12T112:45:00',
-    "servico": { "id": 1 },
-    "funcionario": { "id": 10 },
-    "observacoes": "Observações para o agendamento",
-    "pets" : [
-        {
-            "id": 5,
-            "alimentacao": "racao",
-            "remedios": [
-                { "id": 10, "nome": "Dipirona", "instrucoes": "depois do almoco" }
-            ]
-        }
-    ],
-    "enderecos": [
-        {
-            "tipo": "buscar",
-            "logradouro": "Rua do agendamento",
-            "numero": "1234",
-            "bairro": "Bairro legal",
-            "cidade": "Cidade tal",
-            "estado": "ES"
-        }
-    ]
-};
-
-const testeAgend = new Agendamento(objAgend);
-console.log(testeAgend.toJSON());
+// const objAgend = {
+//     "idEmpresa": 1,
+//     "dtHrMarcada": '2025-10-12T112:45:00',
+//     "servico": { "id": 1 },
+//     // "funcionario": { "id": 10 },
+//     // "estado": {
+//     //     "id": "criado"
+//     // },
+//     // "observacoes": "Observações para o agendamento",
+//     "pets" : [
+//         {
+//             "id": 5,
+//             // "alimentacao": "racao",
+//             // "remedios": [
+//             //     { "id": 10, "nome": "Dipirona", "instrucoes": "depois do almoco" }
+//             // ]
+//         }
+//     ],
+//     // "enderecos": [
+//     //     {
+//     //         "tipo": "buscar",
+//     //         "logradouro": "Rua do agendamento",
+//     //         "numero": "1234",
+//     //         "bairro": "Bairro legal",
+//     //         "cidade": "Cidade tal",
+//     //         "estado": "ES"
+//     //     }
+//     // ]
+// };
+//
+// const testeAgend = new Agendamento(objAgend);
+// console.log(testeAgend.toJSON());

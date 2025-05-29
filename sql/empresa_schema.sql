@@ -1,4 +1,4 @@
--- DATA DE ATUALIZAÇÃO: 24/05/2025
+-- DATA DE ATUALIZAÇÃO: 28/05/2025
 
 -- SCHEMA ================================================================================================================================================================
 CREATE SCHEMA
@@ -416,41 +416,44 @@ CREATE OR REPLACE VIEW vw_servico_exercido AS
 
 
 CREATE OR REPLACE VIEW vw_servico_realizado AS
-    SELECT
+    SELECT 
         s_r.id AS id_servico_realizado,
         s_r.dt_hr_inicio AS dt_hr_inicio,
         s_r.dt_hr_fim AS dt_hr_fim,
+        s_r.valor_servico AS valor_servico,
+        s_r.valor_total AS valor_total,
         i_s.*
     FROM servico_realizado AS s_r
-        INNER JOIN vw_info_servico AS i_s ON (i_s.id_info_servico = s_r.id_info_servico)
-    ORDER BY
+        INNER JOIN vw_info_servico AS i_s ON (i_s.id = s_r.id_info_servico)
+    ORDER BY 
         dt_hr_fim DESC;
+
 
 
 CREATE OR REPLACE VIEW vw_pet_servico AS
     SELECT
-        p_s.id AS id_pet_servico,
-        p_s.id_info_servico AS id_info_servico,
-        s_o.nome AS nome_servico,
+		p_s.id AS id_pet_servico,
+		p_s.id_info_servico AS id_info_servico,
+		s_o.nome AS nome_servico,
         p_c.id AS id_pet,
         p_c.nome AS nome,
-        e.id AS id_especie,
+		e.id AS id_especie,
         e.nome AS nome_especie,
         p_c.raca AS raca,
         p_c.porte AS porte,
         c.id AS id_cliente,
         c.nome AS nome_cliente,
-        p_s.valor_pet AS valor_pet,
-        p_s.instrucao_alimentacao AS instrucao_alimentacao,
-        COUNT(DISTINCT r_p_s.id) AS qtd_remedio_pet_servico
+		p_s.valor_pet AS valor_pet,
+		p_s.instrucao_alimentacao AS instrucao_alimentacao,
+		COUNT(DISTINCT r_p_s.id) AS qtd_remedio_pet_servico
     FROM pet_servico AS p_s
-        INNER JOIN pet AS p_c ON (p_c.id = p_s.id_pet)
-            LEFT JOIN especie AS e ON (e.id = p_c.id_especie)
-            INNER JOIN cliente AS c ON (c.id = p_c.id_cliente)
-        INNER JOIN info_servico AS i_s ON (i_s.id = p_s.id_info_servico)
-        INNER JOIN servico_oferecido AS s_o ON (s_o.id = i_s.id_servico_oferecido)
-        LEFT JOIN remedio_pet_servico AS r_p_s ON (r_p_s.id_pet_servico = p_s.id)
-    GROUP BY p_s.id
+		INNER JOIN pet AS p_c ON (p_c.id = p_s.id_pet)
+			LEFT JOIN especie AS e ON (e.id = p_c.id_especie)
+			INNER JOIN cliente AS c ON (c.id = p_c.id_cliente)
+		INNER JOIN info_servico AS i_s ON (i_s.id = p_s.id_info_servico)
+		INNER JOIN servico_oferecido AS s_o ON (s_o.id = i_s.id_servico_oferecido)
+		LEFT JOIN remedio_pet_servico AS r_p_s ON (r_p_s.id_pet_servico = p_s.id)
+	GROUP BY p_s.id
     ORDER BY id_info_servico DESC, nome ASC;
 
 
@@ -459,6 +462,8 @@ CREATE OR REPLACE VIEW vw_agendamento AS
         a.id AS id_agendamento,
         a.dt_hr_marcada AS dt_hr_marcada,
         a.estado AS estado,
+        a.valor_servico AS valor_servico,
+		a.valor_total AS valor_total,
         i_s.*
     FROM agendamento AS a
         INNER JOIN vw_info_servico AS i_s ON (i_s.id_info_servico = a.id_info_servico)
@@ -466,45 +471,46 @@ CREATE OR REPLACE VIEW vw_agendamento AS
         id_agendamento DESC;
 
 
+
 CREATE OR REPLACE VIEW vw_pacote_agend AS
-    SELECT
-        p_a.id AS id_pacote_agend,
-        p_a.dt_inicio AS dt_inicio,
-        p_a.hr_agendada AS hr_agendada,
-        p_a.frequencia AS frequencia,
-        p_a.estado AS estado,
-        p_a.qtd_recorrencia AS qtd_recorrencia,
-        COUNT(DISTINCT d_p.id) AS qtd_dia_pacote,
-        COUNT(DISTINCT a.id) AS qtd_agendamento,
-        s_o.id AS id_servico_oferecido,
-        s_o.nome AS nome_servico_oferecido,
-        s_o.id_categoria AS id_categoria_servico_oferecido,
-        c_s.nome AS nome_categoria_servico,
-        COUNT(DISTINCT p_p.id_pet) AS qtd_pet_pacote
-    FROM pacote_agend AS p_a
-        INNER JOIN servico_oferecido AS s_o ON (s_o.id = p_a.id_servico_oferecido)
-            LEFT JOIN categoria_servico AS c_s ON (c_s.id = s_o.id_categoria)
-        INNER JOIN dia_pacote AS d_p ON (d_p.id_pacote_agend = p_a.id)
-        INNER JOIN pet_pacote AS p_p ON (p_p.id_pacote_agend = p_a.id)
-        LEFT JOIN agendamento AS a ON (a.id_pacote_agend = p_a.id)
-    GROUP BY id_pacote_agend;
+	SELECT
+		p_a.id AS id_pacote_agend,
+		p_a.dt_inicio AS dt_inicio,
+		p_a.hr_agendada AS hr_agendada,
+		p_a.frequencia AS frequencia,
+		p_a.estado AS estado,
+		p_a.qtd_recorrencia AS qtd_recorrencia,
+		COUNT(DISTINCT d_p.id) AS qtd_dia_pacote,
+		COUNT(DISTINCT a.id) AS qtd_agendamento,
+		s_o.id AS id_servico_oferecido,
+		s_o.nome AS nome_servico_oferecido,
+		s_o.id_categoria AS id_categoria_servico_oferecido,
+		c_s.nome AS nome_categoria_servico,
+		COUNT(DISTINCT p_p.id_pet) AS qtd_pet_pacote
+	FROM pacote_agend AS p_a
+		INNER JOIN servico_oferecido AS s_o ON (s_o.id = p_a.id_servico_oferecido)
+			LEFT JOIN categoria_servico AS c_s ON (c_s.id = s_o.id_categoria)
+		INNER JOIN dia_pacote AS d_p ON (d_p.id_pacote_agend = p_a.id)
+		INNER JOIN pet_pacote AS p_p ON (p_p.id_pacote_agend = p_a.id)
+		LEFT JOIN agendamento AS a ON (a.id_pacote_agend = p_a.id)
+	GROUP BY id_pacote_agend;
 
 CREATE OR REPLACE VIEW vw_pet_pacote AS
     SELECT
-        p_p.id AS id_pet_pacote,
-        p_p.id_pacote_agend AS id_pacote_agend,
+		p_p.id AS id_pet_pacote,
+		p_p.id_pacote_agend AS id_pacote_agend,
         p_c.id AS id_pet,
         p_c.nome AS nome,
-        e.id AS id_especie,
+		e.id AS id_especie,
         e.nome AS nome_especie,
         p_c.raca AS raca,
         p_c.porte AS porte,
         c.id AS id_cliente,
         c.nome AS nome_cliente
     FROM pet_pacote AS p_p
-        INNER JOIN pet AS p_c ON (p_c.id = p_p.id_pet)
-            LEFT JOIN especie AS e ON (e.id = p_c.id_especie)
-            INNER JOIN cliente AS c ON (c.id = p_c.id_cliente)
+		INNER JOIN pet AS p_c ON (p_c.id = p_p.id_pet)
+			LEFT JOIN especie AS e ON (e.id = p_c.id_especie)
+			INNER JOIN cliente AS c ON (c.id = p_c.id_cliente)
     ORDER BY id_pacote_agend DESC, nome ASC;
 
 
@@ -1799,7 +1805,8 @@ CREATE PROCEDURE agendamento
 
             -- Inserção do agendamento
             INSERT INTO agendamento (id_info_servico, dt_hr_marcada) VALUE (id_info_serv, dt_hr_marc);
-
+            
+			SELECT LAST_INSERT_ID() AS id_agendamento;
         ELSEIF acao = "update" THEN
             -- Obtendo o id do agendamento a ser atualizado
             SET id_agend = JSON_EXTRACT(objAgend, '$.id');
@@ -1828,12 +1835,11 @@ CREATE PROCEDURE agendamento
 
             -- Altera registro do servico_realizad
             UPDATE agendamento SET dt_hr_marcada = dt_hr_marc WHERE id = id_agend;
+            
+            SELECT id_agend AS id_agendamento;
         END IF;
     END;$$
 DELIMITER ;
-
-
-
 
 DELIMITER $$
 CREATE PROCEDURE set_estado_agendamento(
@@ -1891,7 +1897,8 @@ CREATE PROCEDURE servico_realizado
 
             -- Inserção do serviço realizado
             INSERT INTO servico_realizado (id_info_servico, dt_hr_inicio, dt_hr_fim) VALUE (id_info_serv, dt_hr_ini, dt_hr_fin);
-
+            
+			SELECT id_serv_real AS id_servico_realizado;
         ELSEIF acao = "update" THEN
             SET id_serv_real = JSON_EXTRACT(objServ, '$.id');
 
@@ -1919,6 +1926,8 @@ CREATE PROCEDURE servico_realizado
 
             -- Altera registro do servico_realizad
             UPDATE servico_realizado SET dt_hr_inicio = dt_hr_ini, dt_hr_fim = dt_hr_fin WHERE id = id_serv_real;
+            
+            SELECT id_serv_real AS id_servico_realizado;
         END IF;
     END;$$
 DELIMITER ;
@@ -1954,7 +1963,7 @@ CREATE PROCEDURE incidente (
 
         SET id_serv_real = JSON_EXTRACT(objInc, '$.servicoRealizado');
         SET tipo_inc = JSON_UNQUOTE(JSON_EXTRACT(objInc, '$.tipo'));
-        SET dt_hr_ocorr = CAST(JSON_UNQUOTE(JSON_EXTRACT(objInc, '$.dtHrOcorrido')) AS DATETIME);
+        SET dt_hr_ocorr = CAST(JSON_UNQUOTE(JSON_EXTRACT(objInc, '$.dtHrOcorrido')) AS DATETIME); /* Validação é feita por trigger na tabela "incidente" */
         SET rel = JSON_UNQUOTE(JSON_EXTRACT(objInc, '$.relato'));
         SET med_tom = JSON_UNQUOTE(JSON_EXTRACT(objInc, '$.medidaTomada'));
 
@@ -1965,7 +1974,7 @@ CREATE PROCEDURE incidente (
                 id_servico_realizado, tipo, dt_hr_ocorrido, relato, medida_tomada)
                 VALUE (id_serv_real, tipo_inc, dt_hr_ocorr, rel, med_tom);
             SET id_inc = LAST_INSERT_ID();
-
+			SELECT id_inc AS id_incidente;
         ELSEIF acao IN ("update", "delete") THEN
             SET id_inc = JSON_EXTRACT(objInc, '$.id');
 
@@ -1993,7 +2002,8 @@ CREATE PROCEDURE incidente (
                                 relato = rel,
                                 medida_tomada = med_tom
                             WHERE id = id_inc;
-
+            
+						SELECT id_inc AS id_incidente;
                     WHEN "delete" THEN
                         DELETE FROM incidente WHERE id = id_inc;
                 END CASE;
@@ -2001,6 +2011,8 @@ CREATE PROCEDURE incidente (
         END IF;
     END;$$
 DELIMITER ;
+
+
 
 DELIMITER $$
 CREATE PROCEDURE pacote_agend (
@@ -2098,7 +2110,7 @@ CREATE PROCEDURE pacote_agend (
 
                 SET p_count = p_count + 1;
             END WHILE;
-
+			SELECT id_pac AS id_pacote_agendamento;
         ELSEIF acao IN ("update", "delete") THEN
             SET id_pac = JSON_EXTRACT(objPac, '$.id');
 
@@ -2126,70 +2138,70 @@ CREATE PROCEDURE pacote_agend (
                                 qtd_recorrencia = qtd_rec  /* Implementar trigger para cancelar ou excluir agendamentos que sobrarem ao diminuir ou adicionar agendamentos ao aumentar */
                             WHERE id = id_pac;
 
-                            -- Loop de atualização de dia_pac
-                            SET d_count = 0;
-                            SET d_length = JSON_LENGTH(arrayObjDiaPac);
-                            IF (arrayObjDiaPac IS NOT NULL) THEN /* Se dias de recorrência deverão ser atualizadas */
-                                SET arrayDiaPac = JSON_ARRAY();
+                        -- Loop de atualização de dia_pac
+                        SET d_count = 0;
+                        SET d_length = JSON_LENGTH(arrayObjDiaPac);
+                        IF (arrayObjDiaPac IS NOT NULL) THEN /* Se dias de recorrência deverão ser atualizadas */
+                            SET arrayDiaPac = JSON_ARRAY();
 
-                                -- Cria array json com inteiros representando os dias e atualiza os registros dos dias do pacote
-                                WHILE d_count < d_length DO
-                                    -- Obtem objeto da array
-                                    SET id_dia_pac = JSON_EXTRACT(arrayObjDiaPac, CONCAT('$[', d_count, '].id'));
-                                    SET dia_pac = JSON_EXTRACT(arrayObjDiaPac, CONCAT('$[', d_count, '].dia'));
+                            -- Cria array json com inteiros representando os dias e atualiza os registros dos dias do pacote
+                            WHILE d_count < d_length DO
+                                -- Obtem objeto da array
+                                SET id_dia_pac = JSON_EXTRACT(arrayObjDiaPac, CONCAT('$[', d_count, '].id'));
+                                SET dia_pac = JSON_EXTRACT(arrayObjDiaPac, CONCAT('$[', d_count, '].dia'));
 
-                                    IF id_dia_pac IS NULL THEN
-                                        INSERT INTO dia_pacote (id_pacote_agend, dia) VALUE (id_pac, dia_pac);
-                                        SET id_dia_pac = LAST_INSERT_ID();
-                                    END IF;
+                                IF id_dia_pac IS NULL THEN
+                                    INSERT INTO dia_pacote (id_pacote_agend, dia) VALUE (id_pac, dia_pac);
+                                    SET id_dia_pac = LAST_INSERT_ID();
+                                END IF;
 
-                                    UPDATE dia_pacote SET dia = dia_pac WHERE id = id_dia_pac;
+                                UPDATE dia_pacote SET dia = dia_pac WHERE id = id_dia_pac;
 
-                                    SET arrayDiaPac = JSON_ARRAY_INSERT(arrayDiaPac, '$[0]', id_dia_pac);
+                                SET arrayDiaPac = JSON_ARRAY_INSERT(arrayDiaPac, '$[0]', id_dia_pac);
 
-                                    SET d_count = d_count + 1;
-                                END WHILE;
+                                SET d_count = d_count + 1;
+                            END WHILE;
 
-                                -- Apagando dias omitidos da array
-                                DELETE FROM dia_pacote
-                                    WHERE
-                                        id_pacote_agend = id_pac
-                                        AND (JSON_CONTAINS(arrayDiaPac, id)) IS NOT TRUE;   /* Implementar trigger que cancela agendamentos futuros não preparados */
+                            -- Apagando dias omitidos da array
+                            DELETE FROM dia_pacote
+                                WHERE
+                                    id_pacote_agend = id_pac
+                                    AND (JSON_CONTAINS(arrayDiaPac, id)) IS NOT TRUE;   /* Implementar trigger que cancela agendamentos futuros não preparados */
 
-                            END IF;
+                        END IF;
 
-                            -- Loop de atualizacao de pet_pacote
-                            SET p_count = 0;
-                            SET p_length = JSON_LENGTH(arrayObjPetPac);
-                            IF (arrayObjPetPac IS NOT NULL) THEN /* Se pets deverão ser atualizadas */
-                                SET arrayPetPac = JSON_ARRAY();
+                        -- Loop de atualizacao de pet_pacote
+                        SET p_count = 0;
+                        SET p_length = JSON_LENGTH(arrayObjPetPac);
+                        IF (arrayObjPetPac IS NOT NULL) THEN /* Se pets deverão ser atualizadas */
+                            SET arrayPetPac = JSON_ARRAY();
 
-                                -- Cria array json com inteiros representando os IDs de tabela "pet_pacote" e atualiza os registros dos pets do pacote
-                                WHILE p_count < p_length DO
-                                    -- Obtem objeto da array
-                                    SET id_pet_pac = JSON_EXTRACT(arrayObjPetPac, CONCAT('$[', p_count, '].id'));
-                                    SET id_pet_cliente = JSON_EXTRACT(arrayObjPetPac, CONCAT('$[', p_count, '].pet'));
+                            -- Cria array json com inteiros representando os IDs de tabela "pet_pacote" e atualiza os registros dos pets do pacote
+                            WHILE p_count < p_length DO
+                                -- Obtem objeto da array
+                                SET id_pet_pac = JSON_EXTRACT(arrayObjPetPac, CONCAT('$[', p_count, '].id'));
+                                SET id_pet_cliente = JSON_EXTRACT(arrayObjPetPac, CONCAT('$[', p_count, '].pet'));
 
-                                    IF id_pet_pac IS NULL THEN
-                                        INSERT INTO pet_pacote (id_pacote_agend, id_pet) VALUE (id_pac, id_pet_cliente);
-                                        SET id_pet_pac = LAST_INSERT_ID();
-                                    END IF;
+                                IF id_pet_pac IS NULL THEN
+                                    INSERT INTO pet_pacote (id_pacote_agend, id_pet) VALUE (id_pac, id_pet_cliente);
+                                    SET id_pet_pac = LAST_INSERT_ID();
+                                END IF;
 
-                                    UPDATE pet_pacote SET id_pet = id_pet_cliente WHERE id = id_pet_pac;
+                                UPDATE pet_pacote SET id_pet = id_pet_cliente WHERE id = id_pet_pac;
 
-                                    SET arrayPetPac = JSON_ARRAY_INSERT(arrayPetPac, '$[0]', id_pet_pac);
+                                SET arrayPetPac = JSON_ARRAY_INSERT(arrayPetPac, '$[0]', id_pet_pac);
 
-                                    SET p_count = p_count + 1;
-                                END WHILE;
+                                SET p_count = p_count + 1;
+                            END WHILE;
 
-                                -- Apagando pets omitidos da array
-                                DELETE FROM pet_pacote
-                                    WHERE
-                                        id_pacote_agend = id_pac
-                                        AND (JSON_CONTAINS(arrayPetPac, id)) IS NOT TRUE;   /* Implementar trigger que cancela agendamentos futuros não preparados */
+                            -- Apagando pets omitidos da array
+                            DELETE FROM pet_pacote
+                                WHERE
+                                    id_pacote_agend = id_pac
+                                    AND (JSON_CONTAINS(arrayPetPac, id)) IS NOT TRUE;   /* Implementar trigger que cancela agendamentos futuros não preparados */
 
-                            END IF;
-
+                        END IF;
+                        SELECT id_pac AS id_pacote_agendamento;
                     WHEN "delete" THEN
                         DELETE FROM pacote_agend WHERE id = id_pac; /* refential action nas tabelas dias e pets garantem a exclusão delas */
                 END CASE;
@@ -2282,7 +2294,11 @@ CREATE EVENT agendamento_set_estado_pendente
 DELIMITER ;
 
 
--- DATA =============================================================================================================================================
+-- FINALIZAÇÃO ========================================================================================================================================
+SET foreign_key_checks = ON;
+
+
+-- DADOS ========================================================
 
 INSERT INTO especie (nome) VALUES
     ("Cão"),
@@ -2304,7 +2320,3 @@ INSERT INTO categoria_servico (nome) VALUES
     ("Creche"),
     ("PetCare");
 
-
-
--- FINALIZAÇÃO ========================================================================================================================================
-SET foreign_key_checks = ON;

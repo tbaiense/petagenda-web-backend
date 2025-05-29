@@ -10,6 +10,7 @@ const servicoOferecidoRouter = require('./servicoOferecidoRouter');
 const funcionarioRouter = require('./funcionarioRouter');
 const clienteRouter = require('./clienteRouter');
 const petRouter = require('./petRouter');
+const agendamentoRouter = require('./agendamentoRouter');
 
 router.use(bodyParser.json({limit: '5mb'}));
 
@@ -36,6 +37,6 @@ router.use('/:idEmpresa/servico-oferecido', servicoOferecidoRouter);
 router.use('/:idEmpresa/funcionario', funcionarioRouter);
 router.use('/:idEmpresa/cliente', clienteRouter);
 router.use('/:idEmpresa/pet', petRouter);
-
+router.use('/:idEmpresa/agendamento', agendamentoRouter);
 
 module.exports = router;
