@@ -36,7 +36,19 @@ JSON:
 }
 
 ## CADASTRAR
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"cnpj": "1234567890","razaoSocial": "Empresa LTDA","nomeFantasia": "Empresa legal","lema": "Trabalha e confia","endereco": {"logradouro": "Avenida Brasil","numero": "123","bairro": "Bairro Legal","cidade": "Cidade Legal","estado": "ES"}}' http://localhost:3000/empresa
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{
+    "cnpj": "1234567890",
+    "razaoSocial": "Empresa LTDA",
+    "nomeFantasia": "Empresa legal",
+    "lema": "Trabalha e confia",
+    "endereco": {
+        "logradouro": "Avenida Brasil",
+        "numero": "123",
+        "bairro": "Bairro Legal",
+        "cidade": "Cidade Legal",
+        "estado": "ES"
+    }
+}' http://localhost:3000/empresa
 
 
 # LICENÇA
@@ -48,7 +60,19 @@ JSON:
 	fim: DateTimeString
 }
 
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODM5MDA4MiwidXNlciI6MywiYWRtaW4iOmZhbHNlfQ.IUZq2bSOM3aJIPiwAnBO1RURlQEck11MEdSVbtsPyZU" --json '{"tipo": "corporativo","inicio": "2000-01-31T10:45:10","fim": "2030-01-31T10:45:10"}' http://localhost:3000/empresa/3/licenca
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODM5MDA4MiwidXNlciI6MywiYWRtaW4iOmZhbHNlfQ.IUZq2bSOM3aJIPiwAnBO1RURlQEck11MEdSVbtsPyZU" --json '{
+    "cnpj": "1234567890",
+    "razaoSocial": "Empresa LTDA",
+    "nomeFantasia": "Empresa legal",
+    "lema": "Trabalha e confia",
+    "endereco": {
+        "logradouro": "Avenida Brasil",
+        "numero": "123",
+        "bairro": "Bairro Legal",
+        "cidade": "Cidade Legal",
+        "estado": "ES"
+    }
+}' http://localhost:3000/empresa/3/licenca
 
 
 # SERVIÇO OFERECIDO
@@ -73,7 +97,21 @@ JSON:
 }
 
 ## CADASTRAR 
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "Banho","preco": 100.99,"categoria": 2, "tipoPreco": "servico","restricaoParticipante": "individual", "restricaoEspecie": [{"especie": 1}, {"especie": 2}]}' http://localhost:3000/empresa/1/servico-oferecido
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{
+    "nome": "Creche",
+    "categoria": 6,
+    "preco": 45.99,
+    "tipoPreco": "pet",
+    "restricaoParticipante": "coletivo",
+    "restricaoEspecie": [
+        {
+            "especie": 1
+        },
+        {
+            "especie": 2
+        }
+    ]
+}' http://localhost:3000/empresa/1/servico-oferecido
 
 
 # FUNCIONÁRIO
@@ -97,7 +135,7 @@ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJw
     "telefone": "(27) 99888-7766",
     "exerce": [
         {
-            "id": 4
+            "id": 1
         },
         {
             "id": 2
@@ -175,7 +213,23 @@ JSON:
 }
 
 ## CADASTRAR
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"dono": {"id": 2},"especie": {"id": 1},"nome": "Frederico","sexo":"M","porte": "P","eCastrado": false,"estadoSaude": "saudável","raca": "Shi-tzu","cor": "Branco e caramelo","comportamento": "Agitado","cartaoVacina": "/caminho/cartao_vacina.pdf"}' http://localhost:3000/empresa/2/pet
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{
+    "dono": {
+        "id": 1
+    },
+    "especie": {
+        "id": 2
+    },
+    "nome": "Mia",
+    "sexo": "F",
+    "porte": "P",
+    "eCastrado": false,
+    "estadoSaude": "saudável",
+    "raca": "Ciamês",
+    "cor": "Branco e cinza",
+    "comportamento": "Calma",
+    "cartaoVacina": "/caminho/cartao_vacina.pdf"
+}' http://localhost:3000/empresa/2/pet
 
 
 # AGENDAMENTO

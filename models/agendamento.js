@@ -6,6 +6,7 @@ const { empresa: empresaDB } = require('../db');
     "id": <INT>,
     "idInfoServico": <INT>,
     "idEmpresa": <INT>,
+    "idServicoRealizado": <INT>, // TODO: integrar à classe
     "dtHrMarcada": <DATETIME>,
     "servico": { "id": <INT> },
     "valor": {
@@ -360,6 +361,7 @@ class Agendamento {
             idEmpresa,
             dtHrMarcada,
             servico,
+            valor,
             funcionario,
             estado,
             observacoes,
@@ -371,6 +373,7 @@ class Agendamento {
         this.idEmpresa = idEmpresa;
         this.dtHrMarcada = dtHrMarcada;
         this.servico = servico;
+        this.valor = valor;
         this.funcionario = funcionario;
         this.estado = estado;
         this.observacoes = observacoes;
