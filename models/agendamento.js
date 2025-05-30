@@ -99,6 +99,23 @@ class Agendamento {
         return this.#_idInfoServico;
     }
 
+    #_idServicoRealizado;
+
+    set idServicoRealizado(idServicoRealizado) {
+        if (Number.isInteger(idServicoRealizado)) {
+            this.#_idServicoRealizado = idServicoRealizado;
+
+        } else if (idServicoRealizado == null || idServicoRealizado == undefined) {
+            this.#_idServicoRealizado = undefined;
+        } else {
+            throw new TypeError('idServicoRealizado must be an integer or null or undefined');
+        }
+    }
+
+    get idServicoRealizado() {
+        return this.#_idServicoRealizado;
+    }
+
     #_idEmpresa;
 
     set idEmpresa(idEmpresa) {
@@ -358,6 +375,7 @@ class Agendamento {
 
         const {
             id,
+            idInfoServico,
             idEmpresa,
             dtHrMarcada,
             servico,
@@ -370,6 +388,7 @@ class Agendamento {
         } = agendamento;
 
         this.id = id;
+        this.idInfoServico = idInfoServico;
         this.idEmpresa = idEmpresa;
         this.dtHrMarcada = dtHrMarcada;
         this.servico = servico;
@@ -433,6 +452,37 @@ class Agendamento {
         }
     }
 
+
+    async saveEstado(connParam) {
+        if (connParam && typeof connParam != 'object') {
+            throw new TypeError('Parâmetro de conexão é inválido para função de salvamento de agendamento');
+        }
+
+        const conn = (connParam) ? connParam : await empresaDB.createConnection({ id: this.idEmpresa });
+        try {
+            let idResponse;
+            if (!this.isNew) {
+                console.log('save estado ', this.estado);
+                await conn.execute(
+                    'CALL set_estado_agendamento(?, ?)',
+                    [this.estado.id, this.id]
+                );
+
+                idResponse = this.id;
+            } else {
+                throw new Error('Não é possível salvar o estado de um agendamento ainda não cadastrado');
+            }
+
+            if (!connParam) conn?.end();
+            return idResponse;
+        } catch (err) {
+            if (!connParam) conn?.end();
+
+            err.message = "Falha ao atualizar estado de agendamento: " + err.message;
+            throw err;
+        }
+    }
+
     static async find(filter, options) {
         if (filter && !(filter instanceof Object)) {
             throw new TypeError('Filter deve ser Object');
@@ -450,12 +500,25 @@ class Agendamento {
             filter.id = undefined;
         }
 
-        if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
+        if (!options) {
             options = { limit: 10, page: 0, useClass: false };
+        } else {
+            if (!Number.isInteger(options.limit)) {
+                options.limit = 10;
+            }
+
+            if (!Number.isInteger(options.page)) {
+                options.page = 0;
+            }
+
+            if (typeof options.useClass != 'boolean') {
+                options.useClass = false;
+            }
         }
 
         const { id, idEmpresa } = filter; // Object representando o Agendamento
         const { limit, page, useClass } = options;
+        console.log(options);
 
         // Buscar no banco agendamentos
         let agendList = [];
@@ -467,8 +530,15 @@ class Agendamento {
                     [id]
                 );
                 if (results.length > 0) {
-                    const objAgend = Agendamento.fromResultSet(results[0]);
-                    agendList = [ useClass ? new Agendamento(objAgend) : objAgend ];
+                    let objAgend = Agendamento.fromResultSet(results[0]);
+                    console.log('result set ', objAgend);
+
+                    if (useClass) {
+                        objAgend.idEmpresa = idEmpresa;
+                        objAgend = new Agendamento(objAgend);
+                        console.log('estado ', objAgend.estado);
+                    }
+                    agendList = [ objAgend ];
                 }
             } else { // Buscar vários Agendamentos
                 const [ results ] = await conn.execute(
@@ -477,13 +547,17 @@ class Agendamento {
 
                 if (results.length > 0) {
                     agendList = results.map( emp => {
-                        const objAgend = Agendamento.fromResultSet(emp);
+                        let objAgend = Agendamento.fromResultSet(emp);
 
-                        return useClass ? new Agendamento(objAgend) : objAgend;
+                        if (useClass) {
+                            objAgend.idEmpresa = idEmpresa;
+                            objAgend = new Agendamento(objAgend);
+                        }
+
+                        return objAgend;
                     });
                 }
             }
-
             // anexar pets ao objeto de resposta
             if (agendList.length > 0) {
                 const idList = agendList.map( agend => {
@@ -563,6 +637,7 @@ class Agendamento {
             }
 
             conn.end();
+            console.log('estado retorno ', agendList[0].estado);
             return agendList;
         } catch (err) {
             err.message = "Falha ao buscar registros de Agendamentos: " + err.message;
@@ -571,10 +646,14 @@ class Agendamento {
         }
     }
 
+
+
+
     static fromResultSet(rs) {
         const objAgend = {
             "id": rs.id_agendamento,
             "idInfoServico": rs.id_info_servico,
+            "idServicoRealizado": rs.id_servico_realizado ?? undefined,
             "dtHrMarcada": rs.dt_hr_marcada,
             "servico": { "id": rs.id_servico_oferecido },
             "valor": {
@@ -632,6 +711,7 @@ class Agendamento {
     toJSON() {
         const objJson = {
             id: this.id,
+            idServicoRealizado: this.idServicoRealizado ?? undefined,
             dtHrMarcada: this.dtHrMarcada,
             servico: { id: this.servico.id },
             funcionario: (this.funcionario) ? { id: this.funcionario.id } : undefined,

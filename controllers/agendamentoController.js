@@ -101,3 +101,57 @@ exports.update = (req, res, next) => {
 exports.delete = (req, res, next) => {
     res.send("NOT IMPLEMENTED YET: pet DELETE");
 };
+
+exports.updateEstado = async (req, res, next) => {
+    const idAgendamento = Number(req.params.idAgendamento);
+    const idEmpresa = Number(req.params.idEmpresa);
+
+    const filter = { id: idAgendamento, idEmpresa: idEmpresa };
+    const options = { useClass: true };
+    const {
+        id: novoEstado
+    } = req.body;
+
+    // Obtendo conexão
+    let conn;
+    try {
+        conn = await empresaDB.createConnection({ id: idEmpresa });
+    } catch (err) {
+        next(err);
+        return;
+    }
+
+    // Buscando pelo agendamento
+    let agendAtualizar;
+    try {
+        const [ agendEncontrado ] = await Agendamento.find(filter, options);
+
+        if (!agendEncontrado) {
+            throw new Error("Agendamento não encontrado");
+        }
+
+        agendAtualizar = agendEncontrado;
+    } catch (err) {
+        err.message = "Erro ao buscar pelo agendamento especificado: " + err.message;
+        next(err);
+        return;
+    }
+
+    try {
+        agendAtualizar.estado = { id: novoEstado };
+        // salvar no banco
+        await conn.query('START TRANSACTION');
+        const idAgendamento = await agendAtualizar.saveEstado(conn);
+        await conn.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: "Estado de agendamento atualizado com sucesso!"
+        });
+    } catch (err) {
+        await conn.query('ROLLBACK');
+        next(err);
+    } finally {
+        conn.end();
+    }
+};

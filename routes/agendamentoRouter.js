@@ -12,4 +12,8 @@ router.route('/:idAgendamento')
 // .put(agendamentoController.update)
 // .delete(agendamentoController.delete);
 
+router.route('/:idAgendamento/estado')
+    .put(agendamentoController.updateEstado);
+
+
 module.exports = router;
