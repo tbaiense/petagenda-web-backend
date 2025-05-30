@@ -374,199 +374,198 @@ class ServicoRealizado {
     }
 
     static async find(filter, options) {
-//         if (filter && !(filter instanceof Object)) {
-//             throw new TypeError('Filter deve ser Object');
-//         }
-//
-//         if (options && !(options instanceof Object)) {
-//             throw new TypeError('Options deve ser Object');
-//         }
-//
-//         if (!filter || typeof filter != 'object' || !Number.isInteger(filter.idEmpresa)) {
-//             throw new Error('filter parameter must be an object and contain at least idEmpresa that is an integer');
-//         }
-//
-//         if (!Number.isInteger(filter.id)) {
-//             filter.id = undefined;
-//         }
-//
-//         if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
-//             options = { limit: 10, page: 0, useClass: false };
-//         }
-//
-//         const { id, idEmpresa } = filter; // Object representando o ServicoRealizado
-//         const { limit, page, useClass } = options;
-//
-//         // Buscar no banco servicoExecutados
-//         let agendList = [];
-//         const conn = await empresaDB.createConnection({ id: idEmpresa });
-//         try {
-//             if (Number.isInteger(id)) {
-//                 const [ results ] = await conn.execute(
-//                     'SELECT * FROM `vw_servicoExecutado` WHERE `id_servicoExecutado` = ? LIMIT 1',
-//                     [id]
-//                 );
-//                 if (results.length > 0) {
-//                     const objServReal = ServicoRealizado.fromResultSet(results[0]);
-//                     agendList = [ useClass ? new ServicoRealizado(objServReal) : objServReal ];
-//                 }
-//             } else { // Buscar vários ServicoRealizados
-//                 const [ results ] = await conn.execute(
-//                     `SELECT * FROM vw_servicoExecutado ORDER BY id_servicoExecutado DESC LIMIT ${limit} OFFSET ${limit * page}`
-//                 );
-//
-//                 if (results.length > 0) {
-//                     agendList = results.map( emp => {
-//                         const objServReal = ServicoRealizado.fromResultSet(emp);
-//
-//                         return useClass ? new ServicoRealizado(objServReal) : objServReal;
-//                     });
-//                 }
-//             }
-//
-//             // anexar pets ao objeto de resposta
-//             if (agendList.length > 0) {
-//                 const idList = agendList.map( agend => {
-//                     return agend.idInfoServico;
-//                 });
-//
-//                 const idListStr = idList.join(",");
-//                 const [ petServ ] = await conn.execute(
-//                     `SELECT id_pet_servico, id_pet, instrucao_alimentacao, id_info_servico FROM vw_pet_servico WHERE id_info_servico IN (${idListStr})`
-//                 );
-//
-//                 if (!petServ) {
-//                     throw new Error('Falha ao obter registros de pets para servicoExecutado');
-//                 }
-//
-//                 const idListPetServ = petServ.map( pet => {
-//                     return pet.id_pet_servico;
-//                 });
-//
-//                 const idListPetServStr = idListPetServ.join(',');
-//
-//                 let [ remPetServ ] = await conn.execute(
-//                     `SELECT id, id_pet_servico, nome, instrucoes FROM remedio_pet_servico WHERE id_pet_servico IN (${idListPetServStr})`
-//                 );
-//
-//                 // Associando pets aos remédios encontrados
-//                 let petServList = petServ.map( pet => {
-//                     const petServ = {
-//                         id: pet.id_pet,
-//                         idInfoServico: pet.id_info_servico,
-//                         instrucaoAlim: pet.instrucao_alimentacao,
-//                         remedios: []
-//                     };
-//
-//                     if (remPetServ) {
-//                         remPetServ = remPetServ.flatMap( rem => {
-//                             if (rem.id_pet_servico == pet.id_pet_servico) {
-//
-//                                 petServ.remedios.push({
-//                                     id: rem.id,
-//                                     nome: rem.nome,
-//                                     instrucoes: rem.instrucoes
-//                                 });
-//
-//                                 return [];
-//                             } else {
-//                                 return rem;
-//                             }
-//                         });
-//                     }
-//
-//                     if (!petServ.remedios) {
-//                         petServ.remedios = undefined;
-//                     }
-//                     return petServ;
-//                 });
-//
-//                 agendList = agendList.map( agend => {
-//                     agend.pets = [];
-//
-//                     petServList = petServList.flatMap( pet => {
-//                         if (pet.idInfoServico == agend.idInfoServico) {
-//                             agend.pets.push({
-//                                 id: pet.id,
-//                                 instrucaoAlim: pet.instrucaoAlim ?? undefined,
-//                                 remedios: (pet.remedios?.length > 0) ? pet.remedios : undefined
-//                             });
-//
-//                             return [];
-//                         } else {
-//                             return pet;
-//                         }
-//                     });
-//
-//                     return agend;
-//                 });
-//             }
-//
-//             conn.end();
-//             return agendList;
-//         } catch (err) {
-//             err.message = "Falha ao buscar registros de ServicoRealizados: " + err.message;
-//             conn.end();
-//             throw err;
-//         }
+        if (filter && !(filter instanceof Object)) {
+            throw new TypeError('Filter deve ser Object');
+        }
+
+        if (options && !(options instanceof Object)) {
+            throw new TypeError('Options deve ser Object');
+        }
+
+        if (!filter || typeof filter != 'object' || !Number.isInteger(filter.idEmpresa)) {
+            throw new Error('filter parameter must be an object and contain at least idEmpresa that is an integer');
+        }
+
+        if (!Number.isInteger(filter.id)) {
+            filter.id = undefined;
+        }
+
+        if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
+            options = { limit: 10, page: 0, useClass: false };
+        }
+
+        const { id, idEmpresa } = filter; // Object representando o ServicoRealizado
+        const { limit, page, useClass } = options;
+
+        // Buscar no banco servicoRealizados
+        let servList = [];
+        const conn = await empresaDB.createConnection({ id: idEmpresa });
+        try {
+            if (Number.isInteger(id)) {
+                const [ results ] = await conn.execute(
+                    'SELECT * FROM `vw_servico_realizado` WHERE `id_servico_realizado` = ? LIMIT 1',
+                    [id]
+                );
+                if (results.length > 0) {
+                    const objServReal = ServicoRealizado.fromResultSet(results[0]);
+                    servList = [ useClass ? new ServicoRealizado(objServReal) : objServReal ];
+                }
+            } else { // Buscar vários ServicoRealizados
+                const [ results ] = await conn.execute(
+                    `SELECT * FROM vw_servico_realizado ORDER BY id_servico_realizado DESC LIMIT ${limit} OFFSET ${limit * page}`
+                );
+
+                if (results.length > 0) {
+                    servList = results.map( serv => {
+                        const objServReal = ServicoRealizado.fromResultSet(serv);
+
+                        return useClass ? new ServicoRealizado(objServReal) : objServReal;
+                    });
+                }
+            }
+
+            // anexar pets ao objeto de resposta
+            if (servList.length > 0) {
+                const idList = servList.map( serv => {
+                    return serv.idInfoServico;
+                });
+
+                const idListStr = idList.join(",");
+                const [ petServ ] = await conn.execute(
+                    `SELECT id_pet_servico, id_pet, instrucao_alimentacao, id_info_servico FROM vw_pet_servico WHERE id_info_servico IN (${idListStr})`
+                );
+
+                if (!petServ) {
+                    throw new Error('Falha ao obter registros de pets para o serviço realizado');
+                }
+
+                const idListPetServ = petServ.map( pet => {
+                    return pet.id_pet_servico;
+                });
+
+                const idListPetServStr = idListPetServ.join(',');
+
+                let [ remPetServ ] = await conn.execute(
+                    `SELECT id, id_pet_servico, nome, instrucoes FROM remedio_pet_servico WHERE id_pet_servico IN (${idListPetServStr})`
+                );
+
+                // Associando pets aos remédios encontrados
+                let petServList = petServ.map( pet => {
+                    const petServ = {
+                        id: pet.id_pet,
+                        idInfoServico: pet.id_info_servico,
+                        instrucaoAlim: pet.instrucao_alimentacao,
+                        remedios: []
+                    };
+
+                    if (remPetServ) {
+                        remPetServ = remPetServ.flatMap( rem => {
+                            if (rem.id_pet_servico == pet.id_pet_servico) {
+
+                                petServ.remedios.push({
+                                    id: rem.id,
+                                    nome: rem.nome,
+                                    instrucoes: rem.instrucoes
+                                });
+
+                                return [];
+                            } else {
+                                return rem;
+                            }
+                        });
+                    }
+
+                    if (!petServ.remedios) {
+                        petServ.remedios = undefined;
+                    }
+                    return petServ;
+                });
+
+                servList = servList.map( serv => {
+                    serv.pets = [];
+
+                    petServList = petServList.flatMap( pet => {
+                        if (pet.idInfoServico == serv.idInfoServico) {
+                            serv.pets.push({
+                                id: pet.id,
+                                instrucaoAlim: pet.instrucaoAlim ?? undefined,
+                                remedios: (pet.remedios?.length > 0) ? pet.remedios : undefined
+                            });
+
+                            return [];
+                        } else {
+                            return pet;
+                        }
+                    });
+
+                    return serv;
+                });
+            }
+
+            conn.end();
+            return servList;
+        } catch (err) {
+            err.message = "Falha ao buscar registros de serviços realizados: " + err.message;
+            conn.end();
+            throw err;
+        }
     }
 
     static fromResultSet(rs) {
-//         const objServReal = {
-//             "id": rs.id_servicoExecutado,
-//             "idInfoServico": rs.id_info_servico,
-//             "inicio": rs.dt_hr_marcada,
-//             "servico": { "id": rs.id_servico_oferecido },
-//             "valor": {
-//                 "servico": rs.valor_servico ?? 0,
-//                 "pets": (!rs.valor_servico && rs.valor_total) ? rs.valor_total : 0,
-//                 "total": rs.valor_total ?? 0
-//             },
-//             "funcionario": (rs.id_funcionario) ? { "id": rs.id_funcionario } : undefined,
-//             "estado": { "id": rs.estado },
-//             "pacote": (rs.id_pacote_agend) ? { id: rs.id_pacote_agend } : undefined,
-//             "observacoes": (rs.observacoes) ? rs.observacoes : undefined
-//         };
-//
-//         if (rs.tipo_endereco_buscar != rs.tipo_endereco_devolver) {
-//             objServReal.enderecos = [];
-//             if (rs.tipo_endereco_buscar) {
-//                 objServReal.enderecos.push({
-//                     "tipo": rs.tipo_endereco_buscar,
-//                     "logradouro": rs.logradouro_endereco_buscar,
-//                     "numero": rs.numero_endereco_buscar,
-//                     "bairro": rs.bairro_endereco_buscar,
-//                     "cidade": rs.cidade_endereco_buscar,
-//                     "estado": rs.estado_endereco_buscar
-//                 });
-//             }
-//
-//             if (rs.tipo_endereco_devolver) {
-//                 objServReal.enderecos.push({
-//                     "tipo": rs.tipo_endereco_devolver,
-//                     "logradouro": rs.logradouro_endereco_devolver,
-//                     "numero": rs.numero_endereco_devolver,
-//                     "bairro": rs.bairro_endereco_devolver,
-//                     "cidade": rs.cidade_endereco_devolver,
-//                     "estado": rs.estado_endereco_devolver
-//                 });
-//             }
-//
-//             if (!objServReal.enderecos) {
-//                 objServReal.enderecos = undefined;
-//             }
-//
-//         } else if (rs.tipo_endereco_buscar) {
-//             objServReal.enderecos = [{
-//                 "tipo": rs.tipo_endereco_buscar,
-//                 "logradouro": rs.logradouro_endereco_buscar,
-//                 "numero": rs.numero_endereco_buscar,
-//                 "bairro": rs.bairro_endereco_buscar,
-//                 "cidade": rs.cidade_endereco_buscar,
-//                 "estado": rs.estado_endereco_buscar
-//             }];
-//         }
-//         return objServReal;
+        const objServReal = {
+            "id": rs.id_servico_realizado,
+            "idInfoServico": rs.id_info_servico,
+            "inicio": rs.dt_hr_inicio,
+            "fim": rs.dt_hr_fim,
+            "servico": { "id": rs.id_servico_oferecido },
+            "valor": {
+                "servico": rs.valor_servico ?? 0,
+                "pets": (!rs.valor_servico && rs.valor_total) ? rs.valor_total : 0,
+                "total": rs.valor_total ?? 0
+            },
+            "funcionario": { "id": rs.id_funcionario },
+            "observacoes": (rs.observacoes) ? rs.observacoes : undefined
+        };
+
+        if (rs.tipo_endereco_buscar != rs.tipo_endereco_devolver) {
+            objServReal.enderecos = [];
+            if (rs.tipo_endereco_buscar) {
+                objServReal.enderecos.push({
+                    "tipo": rs.tipo_endereco_buscar,
+                    "logradouro": rs.logradouro_endereco_buscar,
+                    "numero": rs.numero_endereco_buscar,
+                    "bairro": rs.bairro_endereco_buscar,
+                    "cidade": rs.cidade_endereco_buscar,
+                    "estado": rs.estado_endereco_buscar
+                });
+            }
+
+            if (rs.tipo_endereco_devolver) {
+                objServReal.enderecos.push({
+                    "tipo": rs.tipo_endereco_devolver,
+                    "logradouro": rs.logradouro_endereco_devolver,
+                    "numero": rs.numero_endereco_devolver,
+                    "bairro": rs.bairro_endereco_devolver,
+                    "cidade": rs.cidade_endereco_devolver,
+                    "estado": rs.estado_endereco_devolver
+                });
+            }
+
+            if (!objServReal.enderecos) {
+                objServReal.enderecos = undefined;
+            }
+
+        } else if (rs.tipo_endereco_buscar) {
+            objServReal.enderecos = [{
+                "tipo": rs.tipo_endereco_buscar,
+                "logradouro": rs.logradouro_endereco_buscar,
+                "numero": rs.numero_endereco_buscar,
+                "bairro": rs.bairro_endereco_buscar,
+                "cidade": rs.cidade_endereco_buscar,
+                "estado": rs.estado_endereco_buscar
+            }];
+        }
+        return objServReal;
     }
 
     toJSON() {
@@ -600,7 +599,7 @@ module.exports = ServicoRealizado;
 //     // "estado": {
 //     //     "id": "criado"
 //     // },
-//     // "observacoes": "Observações para o servicoExecutado",
+//     // "observacoes": "Observações para o servicoRealizado",
 //     "pets" : [
 //         {
 //             "id": 5,
@@ -613,7 +612,7 @@ module.exports = ServicoRealizado;
 //     // "enderecos": [
 //     //     {
 //     //         "tipo": "buscar",
-//     //         "logradouro": "Rua do servicoExecutado",
+//     //         "logradouro": "Rua do servicoRealizado",
 //     //         "numero": "1234",
 //     //         "bairro": "Bairro legal",
 //     //         "cidade": "Cidade tal",

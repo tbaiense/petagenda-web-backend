@@ -306,3 +306,47 @@ curl -H "Authorization: Bearer <JWT>" --json '{
     ]
 }
 }' http://localhost:3000/empresa/2/agendamento
+
+
+# SERVICO REALIZADO
+JSON:
+{
+	
+}
+
+## CADASTRAR
+curl -H "Authorization: Bearer <JWT>" --json '{
+    "inicio": "2025-01-01T10:00:00",
+    "fim": "2025-01-01T11:00:00",
+    "servico": {
+        "id": 1
+    },
+    "funcionario": {
+        "id": 1
+    },
+    "observacoes": "Observações do serviço realizado",
+    "pets": [
+        {
+            "id": 1,
+            "alimentacao": "Dar 100g de ração após 10hr",
+            "remedios": [
+                {
+                    "nome": "Dipirona",
+                    "instrucoes": "Se ficar acuado e pálido"
+                }
+            ]
+        }
+    ],
+    "enderecos": [
+        {
+            "tipo": "buscar",
+            "logradouro": "Av. Legal",
+            "numero": "123",
+            "bairro": "Bairro Brasil",
+            "cidade": "Cidade Nova",
+            "estado": "ES"
+        }
+    ]
+}' http://localhost:3000/empresa/1/servico-realizado
+
+
