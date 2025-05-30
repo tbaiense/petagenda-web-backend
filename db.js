@@ -82,7 +82,8 @@ const empresa = {
             }
             await fs.unlink(EMPRESA_SCHEMA_NEW_SCRIPT);
             if (cmd.status) {
-                throw new Error('Falha ao executar cliente MySQL. Verifique o PATH e tente novamente');
+                console.log(cmd.stdout);
+                throw new Error(`Falha ao executar cliente MySQL (erro cmd código ${cmd.status}):\n${cmd.stderr}\nVerifique o PATH e tente novamente'`);
             }
 
         } catch (err) {
@@ -122,7 +123,8 @@ const empresa = {
         try {
             conn = await mysql.createConnection(connConfigs);
         } catch (err) {
-            throw new Error("Falha ao conectar com o banco de dados");
+            err.message = "Falha ao conectar com o banco de dados: " + err.message;
+            throw err;
         }
 
         try {

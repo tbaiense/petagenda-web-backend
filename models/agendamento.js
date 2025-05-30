@@ -17,7 +17,10 @@ const { empresa: empresaDB } = require('../db');
     "estado": {
         "id": <ENUM('criado','preparado','pendente','concluido','cancelado')>,
         "nome": ?<VARCHAR(32)>
-    }
+    },
+    "pacote": {
+        "id": <INT>
+    },
     "observacoes": ?<VARCHAR(250)>,
     "pets" : ?[
         +{
@@ -218,6 +221,25 @@ class Agendamento {
         return this.#_estado;
     }
 
+    #_pacote;
+
+    set pacote(pacote) {
+        if (pacote) {
+            if (typeof pacote !== 'object') throw new TypeError('Informações de pacote devem ser Object');
+
+            this.#_pacote = {
+                id: pacote.id
+            };
+
+        } else {
+            throw new TypeError('Objeto de pacote do agendamento não pode ser nulo');
+        }
+    }
+
+    get pacote() {
+        return this.#_pacote;
+    }
+
     get funcionario() {
         return this.#_funcionario;
     }
@@ -384,7 +406,11 @@ class Agendamento {
                     [json]
                 );
 
-                idResponse = results[0][0].id_agendamento;
+                const [ idQueryResult ] = await conn.execute(
+                    'SELECT @id_agendamento AS id_agendamento'
+                );
+
+                idResponse = idQueryResult[0].id_agendamento;
                 this.id = idResponse;
             } else {
                 const [ results ] = await conn.execute(
@@ -555,6 +581,7 @@ class Agendamento {
             },
             "funcionario": (rs.id_funcionario) ? { "id": rs.id_funcionario } : undefined,
             "estado": { "id": rs.estado },
+            "pacote": (rs.id_pacote_agend) ? { id: rs.id_pacote_agend } : undefined,
             "observacoes": (rs.observacoes) ? rs.observacoes : undefined
         };
 
@@ -606,6 +633,7 @@ class Agendamento {
             servico: { id: this.servico.id },
             funcionario: (this.funcionario) ? { id: this.funcionario.id } : undefined,
             estado: (this.estado) ? this.estado : undefined,
+            pacote: this.pacote,
             observacoes: this.observacoes,
             pets : this.pets,
             enderecos: this.enderecos

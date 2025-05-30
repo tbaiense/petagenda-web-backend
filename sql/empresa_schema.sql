@@ -1,4 +1,4 @@
--- DATA DE ATUALIZAÇÃO: 28/05/2025
+-- DATA DE ATUALIZAÇÃO: 30/05/2025
 
 -- SCHEMA ================================================================================================================================================================
 CREATE SCHEMA
@@ -416,7 +416,7 @@ CREATE OR REPLACE VIEW vw_servico_exercido AS
 
 
 CREATE OR REPLACE VIEW vw_servico_realizado AS
-    SELECT 
+    SELECT
         s_r.id AS id_servico_realizado,
         s_r.dt_hr_inicio AS dt_hr_inicio,
         s_r.dt_hr_fim AS dt_hr_fim,
@@ -424,8 +424,8 @@ CREATE OR REPLACE VIEW vw_servico_realizado AS
         s_r.valor_total AS valor_total,
         i_s.*
     FROM servico_realizado AS s_r
-        INNER JOIN vw_info_servico AS i_s ON (i_s.id = s_r.id_info_servico)
-    ORDER BY 
+        INNER JOIN vw_info_servico AS i_s ON (i_s.id_info_servico = s_r.id_info_servico)
+    ORDER BY
         dt_hr_fim DESC;
 
 
@@ -462,6 +462,7 @@ CREATE OR REPLACE VIEW vw_agendamento AS
         a.id AS id_agendamento,
         a.dt_hr_marcada AS dt_hr_marcada,
         a.estado AS estado,
+        a.id_pacote_agend AS id_pacote_agend,
         a.valor_servico AS valor_servico,
 		a.valor_total AS valor_total,
         i_s.*
@@ -597,7 +598,7 @@ END;$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE TRIGGER trg_pet_pacote_insert /* Validação semelhante à aplicada à tabela pet_pacote */
+CREATE TRIGGER trg_pet_pacote_insert /* Validação semelhante à aplicada à tabela pet_servico */
     BEFORE INSERT
     ON pet_pacote
     FOR EACH ROW
@@ -610,8 +611,13 @@ CREATE TRIGGER trg_pet_pacote_insert /* Validação semelhante à aplicada à ta
         -- Variáveis de validação da espécie
         DECLARE id_ser_ofer INT;
         DECLARE id_esp_este INT;
+        DECLARE id_esp_outro INT;
         DECLARE id_esp_cur INT;
         DECLARE cur_done INT DEFAULT FALSE;
+        DECLARE serv_tem_restr_esp INT DEFAULT FALSE;
+        DECLARE validar_esp INT DEFAULT TRUE;
+        DECLARE esp_valida INT DEFAULT FALSE;
+
         -- Variáveis de validação de participantes
         DECLARE restr_partic ENUM("individual", "coletivo");
 
@@ -648,10 +654,17 @@ CREATE TRIGGER trg_pet_pacote_insert /* Validação semelhante à aplicada à ta
             SELECT id_servico_oferecido FROM pacote_agend WHERE id = NEW.id_pacote_agend
         );
 
+	    -- Obtém as informações do PET sendo inserido
+        SELECT id_cliente, id_especie INTO id_cli_este, id_esp_este FROM pet WHERE id = NEW.id_pet;
+
         IF id_pet_outro IS NOT NULL THEN /* Já existe outro pet para o pacote_agend */
 
+            IF restr_partic = "individual" THEN
+                SIGNAL err_qtd_partic_excedido
+                    SET MESSAGE_TEXT = "Nao e permitido adicionar pet, pois o servico_oferecido possui restricao individual";
+            END IF;
+
             -- Validação se o pet pertence ao mesmo dono
-            SELECT id_cliente, id_especie INTO id_cli_este, id_esp_este FROM pet WHERE id = NEW.id_pet;
             SELECT id_cliente INTO id_cli_outro FROM pet WHERE id = id_pet_outro;
 
             IF id_cli_este <> id_cli_outro THEN
@@ -659,28 +672,177 @@ CREATE TRIGGER trg_pet_pacote_insert /* Validação semelhante à aplicada à ta
                     SET MESSAGE_TEXT = "Pet nao pode ser inserido, pois pertence a um dono diferente dos que já existem para este pacote_agend";
             END IF;
 
-            IF restr_partic = "individual" THEN
-                SIGNAL err_qtd_partic_excedido
-                    SET MESSAGE_TEXT = "Nao e permitido adicionar pet, pois o servico_oferecido possui restricao individual";
+            SELECT id_especie INTO id_esp_outro FROM pet WHERE id = id_pet_outro LIMIT 1;
+
+            IF id_esp_este = id_esp_outro THEN
+            	SET validar_esp = FALSE;
             END IF;
+
         END IF;
 
 
         -- Validação da espécie do pet
-        OPEN cur_especie;
-        especie_loop: LOOP
-            FETCH cur_especie INTO id_esp_cur;
+        IF validar_esp IS TRUE THEN
+	        OPEN cur_especie;
+	        especie_loop: LOOP
+	            FETCH cur_especie INTO id_esp_cur;
 
-            IF cur_done THEN
-                LEAVE especie_loop;
+        		IF id_esp_cur IS NOT NULL THEN
+		            SET serv_tem_restr_esp = TRUE;
+
+		            IF id_esp_cur = id_esp_este THEN
+		            	SET esp_valida = TRUE;
+		            	LEAVE especie_loop;
+		            END IF;
+        		END IF;
+
+	            IF cur_done THEN
+	                LEAVE especie_loop;
+	            END IF;
+
+	        END LOOP;
+	        CLOSE cur_especie;
+
+	        IF serv_tem_restr_esp IS TRUE AND esp_valida IS FALSE THEN
+		        SIGNAL err_esp_incompativel
+		            SET MESSAGE_TEXT = "Especie do pet inserido e incompativel com restricoes de especie do servico_oferecido";
+	        END IF;
+        END IF;
+    END;$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE TRIGGER trg_pet_servico_insert
+    BEFORE INSERT
+    ON pet_servico
+    FOR EACH ROW
+    BEGIN
+        -- Variáveis de definição do valor_pet
+        DECLARE tipo_p VARCHAR(16); /*Tipo da cobrança do serviço*/
+        DECLARE p DECIMAL(8,2); /* Preço cobrado pelo serviço */
+
+        -- Variáveis de validação do dono
+        DECLARE id_cli_este INT; /* cliente associado a este pet */
+        DECLARE id_pet_outro INT; /* id de outro pet associado a este info_servico */
+        DECLARE id_cli_outro INT; /* cliente associado a outro pet do info_servico*/
+
+        -- Variáveis de validação da espécie
+        DECLARE id_ser_ofer INT;
+        DECLARE id_esp_este INT;
+        DECLARE id_esp_outro INT;
+        DECLARE id_esp_cur INT;
+        DECLARE cur_done INT DEFAULT FALSE;
+        DECLARE serv_tem_restr_esp INT DEFAULT FALSE;
+        DECLARE validar_esp INT DEFAULT TRUE;
+        DECLARE esp_valida INT DEFAULT FALSE;
+
+        -- Variáveis de validação de participantes
+        DECLARE restr_partic ENUM("individual", "coletivo");
+
+        -- Condições de erro
+        DECLARE err_dono_diferente CONDITION FOR SQLSTATE '45000'; /* pet inserido pertence a outro dono */
+        DECLARE err_esp_incompativel CONDITION FOR SQLSTATE '45001'; /* espécie do pet é incompatível com as das restrições de espécie aplicadas */
+        DECLARE err_qtd_partic_excedido CONDITION FOR SQLSTATE '45002'; /* não é possível adicionar outro pet, devido à restriçao de participantes aplicada  */
+
+         -- Cursores
+        DECLARE cur_especie CURSOR FOR
+            SELECT
+                id_especie
+                FROM restricao_especie
+                WHERE id_servico_oferecido = (
+                    SELECT id_servico_oferecido
+                        FROM info_servico
+                        WHERE id = NEW.id_info_servico
+                );
+
+        -- Handlers
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET cur_done = TRUE;
+
+        -- Obtendo informação sobre a forma de cobrança do serviço
+        SELECT
+            preco, tipo_preco
+        INTO
+            p, tipo_p
+        FROM
+            servico_oferecido
+        WHERE
+            id = (
+                SELECT id_servico_oferecido
+                FROM info_servico
+                WHERE id = NEW.id_info_servico
+        LIMIT 1);
+
+        IF tipo_p = 'pet' THEN
+            SET NEW.valor_pet = p;
+        ELSE
+            SET NEW.valor_pet = NULL;
+        END IF;
+
+        -- Buscando o id de outro pet existe para o mesmo info_servico
+        SELECT id_pet
+            INTO id_pet_outro
+            FROM pet_servico
+            WHERE
+                id_info_servico = NEW.id_info_servico
+            LIMIT 1;
+
+        -- Validação dos participantes do info_servico
+        SELECT restricao_participante INTO restr_partic FROM servico_oferecido WHERE id = (
+            SELECT id_servico_oferecido FROM info_servico WHERE id = NEW.id_info_servico
+        );
+
+        -- Obtém as informações do PET sendo inserido
+        SELECT id_cliente, id_especie INTO id_cli_este, id_esp_este FROM pet WHERE id = NEW.id_pet;
+
+        IF id_pet_outro IS NOT NULL THEN /* Já existe outro pet para o info_servico */
+
+            IF restr_partic = "individual" THEN
+                SIGNAL err_qtd_partic_excedido
+                    SET MESSAGE_TEXT = "Nao e permitido adicionar pet, pois o servico_oferecido possui restricao individual";
             END IF;
 
-            IF id_esp_cur <> id_esp_este THEN
-                SIGNAL err_esp_incompativel
-                    SET MESSAGE_TEXT = "Especie do pet inserido e incompativel com restricoes de especie do servico_oferecido";
+            -- Validação se o pet pertence ao mesmo dono
+            SELECT id_cliente INTO id_cli_outro FROM pet WHERE id = id_pet_outro;
+
+            IF id_cli_este <> id_cli_outro THEN
+                SIGNAL err_dono_diferente
+                    SET MESSAGE_TEXT = "Pet nao pode ser inserido, pois pertence a um dono diferente dos que já existem para este info_servico";
             END IF;
-        END LOOP;
-        CLOSE cur_especie;
+
+        	SELECT id_especie INTO id_esp_outro FROM pet WHERE id = id_pet_outro LIMIT 1;
+
+            IF id_esp_este = id_esp_outro THEN
+            	SET validar_esp = FALSE;
+            END IF;
+        END IF;
+
+        -- Validação da espécie do pet
+        IF validar_esp IS TRUE THEN
+	        OPEN cur_especie;
+	        especie_loop: LOOP
+	            FETCH cur_especie INTO id_esp_cur;
+
+        		IF id_esp_cur IS NOT NULL THEN
+		            SET serv_tem_restr_esp = TRUE;
+
+		            IF id_esp_cur = id_esp_este THEN
+		            	SET esp_valida = TRUE;
+		            	LEAVE especie_loop;
+		            END IF;
+        		END IF;
+
+	            IF cur_done THEN
+	                LEAVE especie_loop;
+	            END IF;
+
+	        END LOOP;
+	        CLOSE cur_especie;
+
+	        IF serv_tem_restr_esp IS TRUE AND esp_valida IS FALSE THEN
+		        SIGNAL err_esp_incompativel
+		            SET MESSAGE_TEXT = "Especie do pet inserido e incompativel com restricoes de especie do servico_oferecido";
+	        END IF;
+        END IF;
     END;$$
 DELIMITER ;
 
@@ -1138,7 +1300,7 @@ CREATE PROCEDURE funcionario (
                     SET e_count = e_count + 1;
                 END WHILE;
             END IF;
-        
+
             SELECT id_func AS id_funcionario;
         END IF;
     END;$$
@@ -1722,8 +1884,8 @@ CREATE PROCEDURE info_servico
                 SET remedios_length = JSON_LENGTH(pet_obj, '$.remedios');
                 WHILE c_remedio < remedios_length DO
                     SET remedio_obj = JSON_EXTRACT( pet_obj, CONCAT('$.remedios[', c_remedio, ']') );
-                    SET nome_rem = JSON_EXTRACT(remedio_obj, '$.nome');
-                    SET instrucoes_rem = JSON_EXTRACT(remedio_obj, '$.instrucoes');
+                    SET nome_rem = JSON_UNQUOTE(JSON_EXTRACT(remedio_obj, '$.nome'));
+                    SET instrucoes_rem = JSON_UNQUOTE(JSON_EXTRACT(remedio_obj, '$.instrucoes'));
 
                     CALL ins_remedio_pet_servico(id_pet_servico, nome_rem, instrucoes_rem);
                     SET c_remedio = c_remedio + 1;
@@ -1779,7 +1941,7 @@ CREATE PROCEDURE agendamento
         DECLARE id_info_serv INT; /* PK da tabela info_servico*/
         DECLARE dt_hr_marc DATETIME;
         DECLARE objInfo JSON;
-
+		DECLARE cadastrarPacote INT;
         -- Condições
         DECLARE err_not_object CONDITION FOR SQLSTATE '45000';
         DECLARE err_no_info_object CONDITION FOR SQLSTATE '45001';
@@ -1805,8 +1967,8 @@ CREATE PROCEDURE agendamento
 
             -- Inserção do agendamento
             INSERT INTO agendamento (id_info_servico, dt_hr_marcada) VALUE (id_info_serv, dt_hr_marc);
-            
-			SELECT LAST_INSERT_ID() AS id_agendamento;
+
+			SET @id_agendamento = LAST_INSERT_ID();
         ELSEIF acao = "update" THEN
             -- Obtendo o id do agendamento a ser atualizado
             SET id_agend = JSON_EXTRACT(objAgend, '$.id');
@@ -1835,11 +1997,13 @@ CREATE PROCEDURE agendamento
 
             -- Altera registro do servico_realizad
             UPDATE agendamento SET dt_hr_marcada = dt_hr_marc WHERE id = id_agend;
-            
-            SELECT id_agend AS id_agendamento;
+
+			SET @id_agendamento = id_agend;
         END IF;
     END;$$
 DELIMITER ;
+
+
 
 DELIMITER $$
 CREATE PROCEDURE set_estado_agendamento(
@@ -1897,7 +2061,7 @@ CREATE PROCEDURE servico_realizado
 
             -- Inserção do serviço realizado
             INSERT INTO servico_realizado (id_info_servico, dt_hr_inicio, dt_hr_fim) VALUE (id_info_serv, dt_hr_ini, dt_hr_fin);
-            
+
 			SELECT id_serv_real AS id_servico_realizado;
         ELSEIF acao = "update" THEN
             SET id_serv_real = JSON_EXTRACT(objServ, '$.id');
@@ -1926,7 +2090,7 @@ CREATE PROCEDURE servico_realizado
 
             -- Altera registro do servico_realizad
             UPDATE servico_realizado SET dt_hr_inicio = dt_hr_ini, dt_hr_fim = dt_hr_fin WHERE id = id_serv_real;
-            
+
             SELECT id_serv_real AS id_servico_realizado;
         END IF;
     END;$$
@@ -2002,7 +2166,7 @@ CREATE PROCEDURE incidente (
                                 relato = rel,
                                 medida_tomada = med_tom
                             WHERE id = id_inc;
-            
+
 						SELECT id_inc AS id_incidente;
                     WHEN "delete" THEN
                         DELETE FROM incidente WHERE id = id_inc;
@@ -2011,7 +2175,6 @@ CREATE PROCEDURE incidente (
         END IF;
     END;$$
 DELIMITER ;
-
 
 
 DELIMITER $$
@@ -2201,7 +2364,6 @@ CREATE PROCEDURE pacote_agend (
                                     AND (JSON_CONTAINS(arrayPetPac, id)) IS NOT TRUE;   /* Implementar trigger que cancela agendamentos futuros não preparados */
 
                         END IF;
-                        SELECT id_pac AS id_pacote_agendamento;
                     WHEN "delete" THEN
                         DELETE FROM pacote_agend WHERE id = id_pac; /* refential action nas tabelas dias e pets garantem a exclusão delas */
                 END CASE;
@@ -2227,8 +2389,8 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE get_valores_info_servico(
         IN NEW_id_info_serv INT,
-        INOUT NEW_valor_servico INT,
-        INOUT NEW_valor_total INT
+        INOUT NEW_valor_servico DECIMAL(8,2),
+        INOUT NEW_valor_total DECIMAL(8,2)
     )
     BEGIN
         DECLARE tipo_p VARCHAR(16); /* Valor da coluna "tipo_preco" */

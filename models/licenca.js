@@ -17,10 +17,10 @@ class Licenca {
     static fromResultSet(rs) {
         const licObj = {
             idEmpresa: rs.id,
-            temSchema: rs.tem_schema,
-            tipo: rs.licenca_empresa,
-            inicio: rs.dt_inicio_licenca,
-            fim: rs.dt_fim_licenca
+            temSchema: !!rs.tem_schema,
+            tipo: rs.licenca_empresa ?? undefined,
+            inicio: rs.dt_inicio_licenca ?? undefined,
+            fim: rs.dt_fim_licenca ?? undefined
         };
 
         return licObj;
@@ -177,7 +177,7 @@ class Licenca {
                 'UPDATE empresa SET ' 
                 + '`licenca_empresa` = ?, `dt_inicio_licenca` = ?, `dt_fim_licenca` = ? ' 
                 + 'WHERE `id` = ? LIMIT 1',
-                [tipo, inicio, fim, idEmpresa]
+                [tipo ?? null, inicio ?? null, fim ?? null, idEmpresa]
             );
             
             // Criação de SCHEMA para a empresa, se não houver

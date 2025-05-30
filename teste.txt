@@ -92,7 +92,21 @@ JSON:
 }
 
 ## CADASTRAR
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "João Bobão","telefone": "(27) 99888-7766","exerce": [{"id": 4 },{"id": 2 },{"id": 3 }]}' http://localhost:3000/empresa/1/funcionario
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{
+    "nome": "João Bobão",
+    "telefone": "(27) 99888-7766",
+    "exerce": [
+        {
+            "id": 4
+        },
+        {
+            "id": 2
+        },
+        {
+            "id": 3
+        }
+    ]
+}' http://localhost:3000/empresa/1/funcionario
 
 
 # CLIENTE
@@ -115,7 +129,25 @@ JSON:
 }
 
 ## CADASTRAR
-curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{"nome": "Maria Molenga","telefone": "(27) 99888-7766", "servicoRequerido": [{ "servico": 3 }, { "servico": 5 }], "endereco": { "logradouro": "Av. Feliz", "numero": "123", "bairro": "Bairro Alegre", "cidade": "Cidade genial", "estado": "ES"}}' http://localhost:3000/empresa/1/cliente
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwZXRhZ2VuZGEtYmFja2VuZCIsImV4cCI6MTc0ODExNDAxOSwidXNlciI6MSwiYWRtaW4iOmZhbHNlfQ.FKNkk0pYel0oTZg3ptwkKT6fJ1mkmunSIRSDJE-U0n0" --json '{
+    "nome": "Maria Molenga",
+    "telefone": "(27) 99888-7766",
+    "servicoRequerido": [
+        {
+            "servico": 3
+        },
+        {
+            "servico": 5
+        }
+    ],
+    "endereco": {
+        "logradouro": "Av. Feliz",
+        "numero": "123",
+        "bairro": "Bairro Alegre",
+        "cidade": "Cidade genial",
+        "estado": "ES"
+    }
+}' http://localhost:3000/empresa/1/cliente
 
 
 # PET

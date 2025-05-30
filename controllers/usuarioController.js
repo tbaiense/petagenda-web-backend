@@ -5,36 +5,27 @@ const { generateJWT } = require('../utils/jwt');
 exports.create = async function (req, res, next) {
     let usr;
     try {
-        const { email, senha, perguntaSeguranca: { pergunta, resposta } }  = req.body;
+        const { email, senha, perguntaSeguranca }  = req.body;
 
         usr = {
             email: email,
             senha: senha,
-            perguntaSeguranca: {
-                pergunta: pergunta,
-                resposta: resposta
-            }
+            perguntaSeguranca: (typeof perguntaSeguranca == 'object') ? {
+                pergunta: perguntaSeguranca.pergunta,
+                resposta: perguntaSeguranca.resposta
+            } : undefined
         };
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            message: "Objeto inválido para cadastro de usuário",
-            errors: [
-                err
-            ]
-        });
-    }
 
-    usuarioModel.create(usr)
-        .then(results => {
-            res.json({
-                success: true,
-                message: "Usuário cadastrado com sucesso!"
-            });
-        })
-        .catch(err => {
-            next(err);
+        const result = await usuarioModel.create(usr);
+
+        res.json({
+            success: true,
+            message: "Usuário cadastrado com sucesso!"
         });
+    } catch (err) {
+        err.message = 'Falha ao realizar cadastro de usuário: ' + err.message;
+        next(err);
+    }
 }
 
 exports.login = async function (req, res, next) {
