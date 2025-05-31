@@ -531,12 +531,10 @@ class Agendamento {
                 );
                 if (results.length > 0) {
                     let objAgend = Agendamento.fromResultSet(results[0]);
-                    console.log('result set ', objAgend);
 
                     if (useClass) {
                         objAgend.idEmpresa = idEmpresa;
                         objAgend = new Agendamento(objAgend);
-                        console.log('estado ', objAgend.estado);
                     }
                     agendList = [ objAgend ];
                 }
