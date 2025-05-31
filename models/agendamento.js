@@ -6,7 +6,7 @@ const { empresa: empresaDB } = require('../db');
     "id": <INT>,
     "idInfoServico": <INT>,
     "idEmpresa": <INT>,
-    "idServicoRealizado": <INT>, // TODO: integrar à classe
+    "idServicoRealizado": <INT>,
     "dtHrMarcada": <DATETIME>,
     "servico": { "id": <INT> },
     "valor": {
@@ -733,7 +733,7 @@ module.exports = Agendamento;
 
 // const objAgend = {
 //     "idEmpresa": 1,
-//     "dtHrMarcada": '2025-10-12T112:45:00',
+//     "dtHrMarcada": '2025-10-12T12:45:00',
 //     "servico": { "id": 1 },
 //     // "funcionario": { "id": 10 },
 //     // "estado": {
