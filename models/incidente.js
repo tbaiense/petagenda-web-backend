@@ -239,8 +239,13 @@ class Incidente {
             return idResponse;
         } catch (err) {
             if (!connParam) conn?.end();
+            err.message = "Falha ao atualizar ou cadastrar incidente: ";
 
-            err.message = "Falha ao atualizar ou cadastrar incidente: " + err.message;
+            if (err.errno == 1452) {
+                err.message += "o incidente referido não existe"
+            } else {
+                err.message += err.message;
+            }
             throw err;
         }
     }
