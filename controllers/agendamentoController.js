@@ -64,7 +64,7 @@ exports.create = async (req, res, next) => {
 
 exports.info = (req, res, next) => {
     Agendamento.find({ id: Number(req.params.idAgendamento), idEmpresa: Number(req.params.idEmpresa)})
-    .then( agendFound => {
+    .then( ([qtdAgendamento, agendFound]) => {
         if (agendFound.length > 1) {
             next(new Error("Condição inesperada: busca por id retornou mais de um resultado"));
             return;
@@ -86,11 +86,21 @@ exports.list = (req, res, next) => {
         idEmpresa: Number(req.params.idEmpresa),
     };
 
-    Agendamento.find(filter)
-    .then( agendList => {
+    const {
+        page,
+        limit
+    } = req.query;
+
+    const options = {
+        limit: (Number.isInteger(+limit)) ? +limit : 5,
+        page: (Number.isInteger(+page)) ? +page : 0
+    };
+
+    Agendamento.find(filter, options)
+    .then( ([qtdAgendamento, agendList]) => {
         if (agendList.length == 0) res.status(404);
 
-        res.json( { agendamentos: [ ...agendList ] });
+        res.json( { qtdAgendamento: qtdAgendamento, agendamentos: [ ...agendList ] });
     })
     .catch( err => {
         next(err);
@@ -128,7 +138,7 @@ exports.updateEstado = async (req, res, next) => {
     // Buscando pelo agendamento
     let agendAtualizar;
     try {
-        const [ agendEncontrado ] = await Agendamento.find(filter, options);
+        const [ qtdAgendamento, [ agendEncontrado ]] = await Agendamento.find(filter, options);
 
         if (!agendEncontrado) {
             throw new Error("Agendamento não encontrado");
@@ -186,7 +196,7 @@ exports.updateFuncionario = async (req, res, next) => {
     // Buscando pelo agendamento
     let agendAtualizar;
     try {
-        const [ agendEncontrado ] = await Agendamento.find(filter, options);
+        const [ qtdAgendamento, [ agendEncontrado ] ] = await Agendamento.find(filter, options);
 
         if (!agendEncontrado) {
             throw new Error("Agendamento não encontrado");

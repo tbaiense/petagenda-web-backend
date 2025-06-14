@@ -160,6 +160,19 @@ class Agendamento {
         return this.#_servico;
     }
 
+    #_cliente;
+
+    set cliente(cliente) {
+        this.#_cliente = {
+            id: cliente.id,
+            nome: cliente.nome
+        };
+    }
+
+    get cliente() {
+        return this.#_cliente;
+    }
+
     #_valor;
 
     set valor(valor) {
@@ -550,6 +563,7 @@ class Agendamento {
         // Buscar no banco agendamentos
         let agendList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
+        let qtdAgendamentos = 0;
         try {
             if (Number.isInteger(id)) {
                 const [ results ] = await conn.execute(
@@ -558,7 +572,7 @@ class Agendamento {
                 );
                 if (results.length > 0) {
                     let objAgend = Agendamento.fromResultSet(results[0]);
-
+                    qtdAgendamentos = results[0].qtd_agendamento;
                     if (useClass) {
                         objAgend.idEmpresa = idEmpresa;
                         objAgend = new Agendamento(objAgend);
@@ -571,6 +585,7 @@ class Agendamento {
                 );
 
                 if (results.length > 0) {
+                    qtdAgendamentos = results[0].qtd_agendamento;
                     agendList = results.map( emp => {
                         let objAgend = Agendamento.fromResultSet(emp);
 
@@ -662,7 +677,7 @@ class Agendamento {
             }
 
             conn.end();
-            return agendList;
+            return [qtdAgendamentos, agendList];
         } catch (err) {
             err.message = "Falha ao buscar registros de Agendamentos: " + err.message;
             conn.end();
@@ -681,6 +696,10 @@ class Agendamento {
                 "nome": rs.nome_servico_oferecido,
                 "categoria": rs.id_categoria_servico_oferecido,
                 "nomeCategoria": rs.nome_categoria_servico
+            },
+            "cliente": {
+                "id": rs.id_cliente,
+                "nome": rs.nome_cliente
             },
             "valor": {
                 "servico": rs.valor_servico ?? 0,
@@ -744,6 +763,7 @@ class Agendamento {
             idServicoRealizado: this.idServicoRealizado ?? undefined,
             dtHrMarcada: this.dtHrMarcada,
             servico: { id: this.servico.id },
+            cliente: (this.cliente) ? { id: this.cliente.id, nome: this.cliente.nome } : undefined,
             funcionario: (this.funcionario) ? { id: this.funcionario.id } : undefined,
             estado: (this.estado) ? this.estado : undefined,
             pacote: this.pacote,
