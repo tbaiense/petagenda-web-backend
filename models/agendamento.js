@@ -482,6 +482,35 @@ class Agendamento {
         }
     }
 
+    async saveFuncionario(connParam) {
+        if (connParam && typeof connParam != 'object') {
+            throw new TypeError('Parâmetro de conexão é inválido para função de salvamento de agendamento');
+        }
+
+        const conn = (connParam) ? connParam : await empresaDB.createConnection({ id: this.idEmpresa });
+        try {
+            let idResponse;
+            if (!this.isNew) {
+                await conn.execute(
+                    'CALL set_funcionario_info_servico(?, ?)',
+                                   [this.funcionario.id, this.idInfoServico]
+                );
+
+                idResponse = this.id;
+            } else {
+                throw new Error('Não é possível salvar o funcionário atribuído de um agendamento ainda não cadastrado');
+            }
+
+            if (!connParam) conn?.end();
+            return idResponse;
+        } catch (err) {
+            if (!connParam) conn?.end();
+
+            err.message = "Falha ao atualizar funcionário atribuído de agendamento: " + err.message;
+            throw err;
+        }
+    }
+
     static async find(filter, options) {
         if (filter && !(filter instanceof Object)) {
             throw new TypeError('Filter deve ser Object');
@@ -641,22 +670,28 @@ class Agendamento {
         }
     }
 
-
-
-
     static fromResultSet(rs) {
         const objAgend = {
             "id": rs.id_agendamento,
             "idInfoServico": rs.id_info_servico,
             "idServicoRealizado": rs.id_servico_realizado ?? undefined,
             "dtHrMarcada": rs.dt_hr_marcada,
-            "servico": { "id": rs.id_servico_oferecido },
+            "servico": {
+                "id": rs.id_servico_oferecido,
+                "nome": rs.nome_servico_oferecido,
+                "categoria": rs.id_categoria_servico_oferecido,
+                "nomeCategoria": rs.nome_categoria_servico
+            },
             "valor": {
                 "servico": rs.valor_servico ?? 0,
                 "pets": (!rs.valor_servico && rs.valor_total) ? rs.valor_total : 0,
                 "total": rs.valor_total ?? 0
             },
-            "funcionario": (rs.id_funcionario) ? { "id": rs.id_funcionario } : undefined,
+            "funcionario": (rs.id_funcionario) ? {
+                "id": rs.id_funcionario,
+                "nome": rs.nome_funcionario
+
+            } : undefined,
             "estado": { "id": rs.estado },
             "pacote": (rs.id_pacote_agend) ? { id: rs.id_pacote_agend } : undefined,
             "observacoes": (rs.observacoes) ? rs.observacoes : undefined
@@ -725,38 +760,3 @@ class Agendamento {
 }
 
 module.exports = Agendamento;
-
-// TESTES
-
-// const objAgend = {
-//     "idEmpresa": 1,
-//     "dtHrMarcada": '2025-10-12T12:45:00',
-//     "servico": { "id": 1 },
-//     // "funcionario": { "id": 10 },
-//     // "estado": {
-//     //     "id": "criado"
-//     // },
-//     // "observacoes": "Observações para o agendamento",
-//     "pets" : [
-//         {
-//             "id": 5,
-//             // "alimentacao": "racao",
-//             // "remedios": [
-//             //     { "id": 10, "nome": "Dipirona", "instrucoes": "depois do almoco" }
-//             // ]
-//         }
-//     ],
-//     // "enderecos": [
-//     //     {
-//     //         "tipo": "buscar",
-//     //         "logradouro": "Rua do agendamento",
-//     //         "numero": "1234",
-//     //         "bairro": "Bairro legal",
-//     //         "cidade": "Cidade tal",
-//     //         "estado": "ES"
-//     //     }
-//     // ]
-// };
-//
-// const testeAgend = new Agendamento(objAgend);
-// console.log(testeAgend.toJSON());

@@ -89,6 +89,8 @@ exports.info = (req, res, next) => {
 exports.list = (req, res, next) => {
     const idCliente = Number(req.query.idCliente);
 
+    const options = {};
+
     const filter = {
         idEmpresa: Number(req.params.idEmpresa),
         idCliente: (idCliente) ? idCliente : Number(req.params.idCliente),

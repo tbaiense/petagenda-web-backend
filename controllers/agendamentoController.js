@@ -163,3 +163,61 @@ exports.updateEstado = async (req, res, next) => {
         conn.end();
     }
 };
+
+exports.updateFuncionario = async (req, res, next) => {
+    const idAgendamento = Number(req.params.idAgendamento);
+    const idEmpresa = Number(req.params.idEmpresa);
+
+    const filter = { id: idAgendamento, idEmpresa: idEmpresa };
+    const options = { useClass: true };
+    const {
+        id: novoFuncionario
+    } = req.body;
+
+    // Obtendo conexão
+    let conn;
+    try {
+        conn = await empresaDB.createConnection({ id: idEmpresa });
+    } catch (err) {
+        next(err);
+        return;
+    }
+
+    // Buscando pelo agendamento
+    let agendAtualizar;
+    try {
+        const [ agendEncontrado ] = await Agendamento.find(filter, options);
+
+        if (!agendEncontrado) {
+            throw new Error("Agendamento não encontrado");
+        }
+
+        agendAtualizar = agendEncontrado;
+    } catch (err) {
+        err.message = "Erro ao buscar pelo agendamento especificado: " + err.message;
+        next(err);
+        return;
+    }
+
+    try {
+        agendAtualizar.funcionario = { id: novoFuncionario };
+        // salvar no banco
+        await conn.query('START TRANSACTION');
+        const idAgendamento = await agendAtualizar.saveFuncionario(conn);
+        await conn.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: "Funcionário atribuído atualizado com sucesso!",
+
+            agendamento: {
+                id: idAgendamento
+            }
+        });
+    } catch (err) {
+        await conn.query('ROLLBACK');
+        next(err);
+    } finally {
+        conn.end();
+    }
+};
