@@ -58,7 +58,7 @@ exports.find = async function (filter = undefined, options = undefined) {
         const { email, senha } = filter;
 
         if (!email || !senha) {
-            throw new Error('Filtro inválido para busca');
+            throw new Error('Informe email e senha para realizar o login');
         }
 
         // Procurando usuário pelo email e senha
