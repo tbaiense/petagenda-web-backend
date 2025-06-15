@@ -100,10 +100,10 @@ exports.create = async (req, res, next) => {
 
 exports.list = function (req, res, next) {
     ServicoOferecido.find({ idEmpresa: Number(req.params.idEmpresa)})
-        .then( servicoList => {
+        .then( ({ qtdServicosOferecidos, servicoList }) => {
             if (servicoList.length == 0) res.status(404);
 
-            res.json( { servicosOferecidos: servicoList });
+            res.json( { qtdServicosOferecidos: qtdServicosOferecidos ,servicosOferecidos: servicoList });
         })
         .catch( err => {
             next(err);
@@ -113,7 +113,7 @@ exports.list = function (req, res, next) {
 
 exports.info = function (req, res, next) {
     ServicoOferecido.find({ id: Number(req.params.idServicoOferecido), idEmpresa: Number(req.params.idEmpresa)})
-        .then( servicoFound => {
+        .then( ({ servicoList: servicoFound }) => {
             if (servicoFound.length > 1) {
                 next(new Error("Condição inesperada: busca por id retornou mais de um resultado"));
                 return;

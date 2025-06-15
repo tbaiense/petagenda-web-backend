@@ -67,7 +67,7 @@ class ServicoOferecido {
         // Buscar no banco servicos oferecidos
         let servicoList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
-
+        let qtdServicosOferecidos = 0;
         try {
             if (Number.isInteger(id)) { 
                 const [ results ] = await conn.execute(
@@ -76,6 +76,7 @@ class ServicoOferecido {
                 );
 
                 if (results.length > 0) {
+                    qtdServicosOferecidos = results[0].qtd_servicos_oferecidos;
                     const objServ = ServicoOferecido.fromResultSet(results[0]);
                     servicoList = [ useClass ? new ServicoOferecido(objServ) : objServ ];          
                 }
@@ -85,6 +86,8 @@ class ServicoOferecido {
                 );
 
                 if (results.length > 0) {
+                    qtdServicosOferecidos = results[0].qtd_servicos_oferecidos;
+
                     servicoList = results.map( emp => {
                         const objServ = ServicoOferecido.fromResultSet(emp);
     
@@ -121,7 +124,7 @@ class ServicoOferecido {
                 });
             }
             conn.end();
-            return servicoList;
+            return { servicoList, qtdServicosOferecidos };
         } catch (err) {
             err.message = "Falha ao buscar registros de ServicoOferecido: " + err.message; 
             conn.end();
