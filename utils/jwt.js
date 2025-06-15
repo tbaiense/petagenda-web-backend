@@ -17,7 +17,7 @@ const generateJWT = function(usuario) {
 
     const payload = Buffer.from(JSON.stringify({
         iss: "petagenda-backend",
-        exp: Math.floor(Date.now() / 1000 + 900), // Dois minutos no futuro
+        exp: Math.floor(Date.now() / 1000 * 60 * 60 * 3), // Dois minutos no futuro
         user: id,
         admin: (e_admin == 'Y') ? true : false
     }))

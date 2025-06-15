@@ -82,7 +82,7 @@ class ServicoOferecido {
                 }
             } else { // Buscar várias ServicoOferecidos
                 const [ results ] = await conn.execute(
-                    `SELECT * FROM vw_servico_oferecido ORDER BY id_servico_oferecido DESC`/* LIMIT ${limit} OFFSET ${limit * page}`*/
+                    `SELECT * FROM vw_servico_oferecido ORDER BY id_servico_oferecido DESC LIMIT ${limit} OFFSET ${limit * page}`/* LIMIT ${limit} OFFSET ${limit * page}`*/
                 );
 
                 if (results.length > 0) {

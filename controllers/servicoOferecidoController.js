@@ -99,7 +99,15 @@ exports.create = async (req, res, next) => {
 };
 
 exports.list = function (req, res, next) {
-    ServicoOferecido.find({ idEmpresa: Number(req.params.idEmpresa)})
+    let options;
+
+    if (Number.isInteger(+req.query.limit) && Number.isInteger(+req.query.page)) {
+        options = {
+            limit: +req.query.limit,
+            page: +req.query.page
+        };
+    }
+    ServicoOferecido.find({ idEmpresa: Number(req.params.idEmpresa)}, options)
         .then( ({ qtdServicosOferecidos, servicoList }) => {
             if (servicoList.length == 0) res.status(404);
 
