@@ -49,7 +49,7 @@ exports.create = async (req, res, next) => {
 
 exports.info = (req, res, next) => {
     ServicoRealizado.find({ id: Number(req.params.idServicoRealizado), idEmpresa: Number(req.params.idEmpresa)})
-    .then( servFound => {
+    .then( ({servFound}) => {
         if (servFound.length > 1) {
             next(new Error("Condição inesperada: busca por id retornou mais de um resultado"));
             return;
@@ -71,11 +71,21 @@ exports.list = (req, res, next) => {
         idEmpresa: Number(req.params.idEmpresa),
     };
 
-    ServicoRealizado.find(filter)
-    .then( servList => {
+    const {
+        page,
+        limit
+    } = req.query;
+
+    const options = {
+        limit: (Number.isInteger(+limit)) ? +limit : 5,
+        page: (Number.isInteger(+page)) ? +page : 0
+    };
+
+    ServicoRealizado.find(filter, options)
+    .then( ({ qtdServicosRealizados, servList }) => {
         if (servList.length == 0) res.status(404);
 
-        res.json( { servicosRealizados: [ ...servList ] });
+        res.json( { qtdServicosRealizados, servicosRealizados: [ ...servList ] });
     })
     .catch( err => {
         next(err);

@@ -289,6 +289,23 @@ class ServicoRealizado {
     get enderecos() {
         return this.#_enderecos;
     }
+
+    #_cliente;
+
+    set cliente(cliente) {
+        if (typeof cliente == 'object') {
+            this.#_cliente = {
+                id: cliente.id,
+                nome: cliente.nome
+            }
+        }
+    }
+
+    get cliente() {
+        return this.#_cliente;
+    }
+
+
     constructor(servicoRealizado) {
         try {
             if (!servicoRealizado || typeof servicoRealizado != 'object') {
@@ -304,7 +321,8 @@ class ServicoRealizado {
                 funcionario,
                 observacoes,
                 pets,
-                enderecos
+                enderecos,
+                cliente
             } = servicoRealizado;
 
             this.id = id;
@@ -317,6 +335,7 @@ class ServicoRealizado {
             this.observacoes = observacoes;
             this.pets = pets;
             this.enderecos = enderecos;
+            this.cliente = cliente;
 
         } catch (err) {
             err.message = "Falha ao instanciar serviço realizado: " + err.message;
@@ -400,6 +419,8 @@ class ServicoRealizado {
         // Buscar no banco servicoRealizados
         let servList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
+        let qtdServicosRealizados;
+
         try {
             if (Number.isInteger(id)) {
                 const [ results ] = await conn.execute(
@@ -407,6 +428,8 @@ class ServicoRealizado {
                     [id]
                 );
                 if (results.length > 0) {
+                    qtdServicosRealizados = results[0].qtd_servico_realizado;
+
                     const objServReal = ServicoRealizado.fromResultSet(results[0]);
                     servList = [ useClass ? new ServicoRealizado(objServReal) : objServReal ];
                 }
@@ -416,6 +439,8 @@ class ServicoRealizado {
                 );
 
                 if (results.length > 0) {
+                    qtdServicosRealizados = results[0].qtd_servico_realizado;
+
                     servList = results.map( serv => {
                         const objServReal = ServicoRealizado.fromResultSet(serv);
 
@@ -503,7 +528,7 @@ class ServicoRealizado {
             }
 
             conn.end();
-            return servList;
+            return { servList, qtdServicosRealizados };
         } catch (err) {
             err.message = "Falha ao buscar registros de serviços realizados: " + err.message;
             conn.end();
@@ -523,8 +548,12 @@ class ServicoRealizado {
                 "pets": (!rs.valor_servico && rs.valor_total) ? rs.valor_total : 0,
                 "total": rs.valor_total ?? 0
             },
-            "funcionario": { "id": rs.id_funcionario },
-            "observacoes": (rs.observacoes) ? rs.observacoes : undefined
+            "funcionario": { "id": rs.id_funcionario, "nome": rs.nome_funcionario },
+            "observacoes": (rs.observacoes) ? rs.observacoes : undefined,
+            "cliente": (rs.id_cliente) ? {
+                id: rs.id_cliente,
+                nome: rs.nome_cliente
+            } : undefined
         };
 
         if (rs.tipo_endereco_buscar != rs.tipo_endereco_devolver) {
@@ -577,7 +606,8 @@ class ServicoRealizado {
             funcionario: (this.funcionario) ? { id: this.funcionario.id } : undefined,
             observacoes: this.observacoes,
             pets : this.pets,
-            enderecos: this.enderecos
+            enderecos: this.enderecos,
+            cliente: this.cliente
         };
 
         return objJson;
