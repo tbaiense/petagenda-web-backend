@@ -81,8 +81,58 @@ exports.list = (req, res, next) => {
         next(err);
     });};
 
-exports.update = (req, res, next) => {
-    res.send("NOT IMPLEMENTED YET: funcionario UPDATE");
+exports.update = async (req, res, next) => {
+    const id = +req.params.idFuncionario;
+    const {
+        nome, telefone, exerce
+    } = req.body;
+
+    let funcEditado;
+    idEmpresa = Number(req.params.idEmpresa);
+    try {
+        funcEditado = {
+            idEmpresa,
+            id,
+            nome, telefone, exerce
+        };
+
+        funcEditado = new Funcionario(funcEditado);
+    } catch (err) {
+        err.message = "Erro ao instanciar objeto Funcionario: " + err.message;
+        next(err);
+        return;
+    }
+
+    // Obtendo conexão
+    let conn;
+    try {
+        conn = await empresaDB.createConnection({ id: idEmpresa });
+    } catch (err) {
+        next(err);
+        return;
+    }
+
+
+    try {
+        // salvar no banco
+        await conn.query('START TRANSACTION');
+        const idFuncionario = await funcEditado.save(conn);
+
+        await conn.query('COMMIT');
+        res.json({
+            success: true,
+            message: "Funcionário editado com sucesso!",
+
+            funcionario: {
+                id: idFuncionario
+            }
+        });
+    } catch (err) {
+        await conn.query('ROLLBACK');
+        next(err);
+    } finally {
+        conn.end();
+    }
 };
 
 exports.delete = (req, res, next) => {

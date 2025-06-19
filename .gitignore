@@ -3,3 +3,4 @@
 resources/**/*.png
 resources/**/*.jpg
 sql/empresa_schema.sql
+sql/dbo_schema.sql
