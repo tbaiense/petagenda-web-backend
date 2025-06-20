@@ -139,8 +139,89 @@ exports.info = function (req, res, next) {
             next(err);
         });
 }
-exports.update = function (req, res) {
-    res.send('empresa update work');
+exports.update = async function (req, res, next) {
+    // atualizar objeto empresa
+
+    /*
+     foto: {
+        type: "image/jpeg",
+        data: BASE64
+    }
+
+*/
+    const { razaoSocial, nomeFantasia, cnpj, lema, foto, endereco } = req.body;
+    const id = +req.params.idEmpresa;
+    let empresaEditada;
+
+    try {
+        empresaEditada = new Empresa({
+            id,
+            razaoSocial,
+            nomeFantasia,
+            cnpj,
+            lema,
+            endereco
+        });
+    } catch (err) {
+        err.message = "Erro ao instanciar objeto Empresa: " + err.message;
+        next(err);
+        return;
+    }
+
+    // Obtendo conexão
+    let conn;
+    try {
+        conn = await dbo.createConnection();
+    } catch (err) {
+        next(err);
+        return;
+    }
+
+    try {
+        // salvar no banco
+        await conn.query('START TRANSACTION');
+        const idEmpresa = await empresaEditada.save(conn);
+
+        // Cadastrar foto
+        if (foto && typeof foto == 'object') {
+            if (foto.data && typeof foto.data == 'string') {
+                let linkFoto = path.join(PROFILE_PIC_DIR, `pic_emp_${idEmpresa}.jpg`);
+                let handle;
+                try {
+                    handle = await fs.open(linkFoto, 'w');
+                    await handle.writeFile(foto.data, { encoding: 'base64' });
+                    handle?.close();
+                    handle = null;
+                    // atualizar usuário com link da foto
+                    empresaEditada.foto = `/empresa/${idEmpresa}/pic_emp_${idEmpresa}.jpg`;
+
+                    await empresaEditada.save();
+                } catch (errFoto) {
+                    if (handle != null) handle?.close();
+                    //console.log('erro ao cadastrar foto: ', err.message);
+                    errFoto.message = 'Falha ao atualizar foto: ' + errFoto.message;
+                    throw errFoto;
+                }
+            }
+        }
+
+
+        res.json({
+            success: true,
+            message: "Empresa atualizada com sucesso!",
+
+            empresa: {
+                id: idEmpresa
+            }
+        });
+
+        await conn.query('COMMIT');
+    } catch (err) {
+        await conn.query('ROLLBACK');
+        next(err);
+    } finally {
+        conn.end();
+    }
 }
 exports.delete = function (req, res) {
     res.send('empresa delete work');

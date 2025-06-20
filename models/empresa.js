@@ -81,6 +81,7 @@ class Empresa {
             cotas: cotasObj,
             cnpj: emp.cnpj,
             nomeFantasia: emp.nome_fantasia,
+            lema: emp.lema ?? undefined,
             endereco: enderecoObj,
         };
 
@@ -233,10 +234,12 @@ class Empresa {
         try {
             // Criar empresa
             let idResponse;
+            const jsonEmp = JSON.stringify(this);
+            console.log('json da empresa: \n', jsonEmp);
             if (this.isNew) {
                 const [ results ] = await conn.execute(
                     'CALL empresa("insert", ?)',
-                    [JSON.stringify(this)]
+                    [jsonEmp]
                 );
 
                 idResponse = results[0][0].id_empresa;
@@ -244,8 +247,9 @@ class Empresa {
             } else {
                 const [ results ] = await conn.execute(
                     'CALL empresa("update", ?)',
-                    [JSON.stringify(this)]
+                    [jsonEmp]
                 );
+                idResponse = results[0][0].id_empresa;
             }
             if (!connParam) conn.end();
             return idResponse;
