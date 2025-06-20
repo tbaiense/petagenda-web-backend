@@ -49,15 +49,15 @@ exports.create = async (req, res, next) => {
 
 exports.info = (req, res, next) => {
     ServicoRealizado.find({ id: Number(req.params.idServicoRealizado), idEmpresa: Number(req.params.idEmpresa)})
-    .then( ({servFound}) => {
-        if (servFound.length > 1) {
+    .then( ({servList}) => {
+        if (servList.length > 1) {
             next(new Error("Condição inesperada: busca por id retornou mais de um resultado"));
             return;
         }
 
-        if (!servFound[0]) res.status(404);
+        if (!servList[0]) res.status(404);
 
-        res.json({ servicoRealizado: servFound[0] ?? {} });
+        res.json({ servicoRealizado: servList[0] ?? {} });
     })
     .catch( err => {
         next(err);
@@ -93,8 +93,63 @@ exports.list = (req, res, next) => {
 
 };
 
-exports.update = (req, res, next) => {
-    res.send("NOT IMPLEMENTED YET: pet UPDATE");
+exports.update = async (req, res, next) => {
+    let servicoRealEditado;
+    idEmpresa = Number(req.params.idEmpresa);
+    const id = +req.params.idServicoRealizado;
+
+    const { inicio, fim, funcionario } = req.body;
+
+    try {
+        const { servList } = await ServicoRealizado.find({ id: id, idEmpresa: idEmpresa }, { useClass: true });
+
+        console.log(servList);
+
+        if (servList.length == 0) {
+            throw new Error('Falha ao buscar por registro de serviço realizado');
+        }
+
+        const servFound = servList[0];
+
+        servFound.inicio = inicio;
+        servFound.fim = fim;
+        servFound.funcionario = funcionario;
+
+        servicoRealEditado = servFound;
+    } catch (err) {
+        next(err);
+        return;
+    }
+
+    // Obtendo conexão
+    let conn;
+    try {
+        conn = await empresaDB.createConnection({ id: idEmpresa });
+    } catch (err) {
+        next(err);
+        return;
+    }
+
+    try {
+        // salvar no banco
+        await conn.query('START TRANSACTION');
+        const idServicoRealizado = await servicoRealEditado.save(conn);
+        await conn.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: "Serviço realizado atualizado com sucesso!",
+
+            servicoRealizado: {
+                id: idServicoRealizado
+            }
+        });
+    } catch (err) {
+        await conn.query('ROLLBACK');
+        next(err);
+    } finally {
+        conn.end();
+    }
 };
 
 exports.delete = (req, res, next) => {

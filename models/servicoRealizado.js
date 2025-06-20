@@ -107,7 +107,10 @@ class ServicoRealizado {
     #_inicio;
 
     set inicio(inicio) {
-        if (typeof inicio != 'string' || inicio.length < 8) throw new TypeError('inicio value must be a string representing a date');
+        if (!inicio) {
+            this.#_inicio = undefined;
+        } else if (typeof inicio != 'string' || inicio.length < 8) throw new TypeError('inicio value must be a string representing a date');
+
         // TODO: validar string de data
         this.#_inicio = inicio;
     }
@@ -139,7 +142,7 @@ class ServicoRealizado {
             };
 
         } else {
-            throw new TypeError('Objeto de servico do pet não pode ser nulo');
+            throw new TypeError('Objeto de servico do serviço realizado não pode ser nulo');
         }
     }
 
@@ -175,7 +178,7 @@ class ServicoRealizado {
                 ...funcionario
             };
         } else {
-            throw new TypeError('Objeto de funcionario do pet não pode ser nulo');
+            throw new TypeError('Objeto de funcionario do serviço realizado não pode ser nulo');
         }
     }
 
@@ -314,6 +317,7 @@ class ServicoRealizado {
             const {
                 id,
                 idEmpresa,
+                idInfoServico,
                 inicio,
                 fim,
                 servico,
@@ -327,6 +331,7 @@ class ServicoRealizado {
 
             this.id = id;
             this.idEmpresa = idEmpresa;
+            this.idInfoServico = idInfoServico
             this.inicio = inicio;
             this.fim = fim;
             this.servico = servico;
@@ -409,8 +414,20 @@ class ServicoRealizado {
             filter.id = undefined;
         }
 
-        if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
-            options = { limit: 10, page: 0, useClass: false };
+        if (!options) {
+            options = {};
+        }
+
+        if (!Number.isInteger(options.limit)) {
+            options.limit = 10;
+        }
+
+        if (!Number.isInteger(options.page)) {
+            options.page = 0;
+        }
+
+        if (typeof options.useClass != 'boolean') {
+            options.useClass = false;
         }
 
         const { id, idEmpresa } = filter; // Object representando o ServicoRealizado
@@ -420,7 +437,7 @@ class ServicoRealizado {
         let servList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
         let qtdServicosRealizados;
-
+        console.log('options: ', options);
         try {
             if (Number.isInteger(id)) {
                 const [ results ] = await conn.execute(
@@ -428,9 +445,13 @@ class ServicoRealizado {
                     [id]
                 );
                 if (results.length > 0) {
+                    console.log('results: ', results );
                     qtdServicosRealizados = results[0].qtd_servico_realizado;
 
                     const objServReal = ServicoRealizado.fromResultSet(results[0]);
+
+                    objServReal.idEmpresa = +filter.idEmpresa;
+
                     servList = [ useClass ? new ServicoRealizado(objServReal) : objServReal ];
                 }
             } else { // Buscar vários ServicoRealizados
@@ -443,11 +464,12 @@ class ServicoRealizado {
 
                     servList = results.map( serv => {
                         const objServReal = ServicoRealizado.fromResultSet(serv);
-
+                        objServReal.idEmpresa = +filter.idEmpresa;
                         return useClass ? new ServicoRealizado(objServReal) : objServReal;
                     });
                 }
             }
+            console.log('servList: ', servList.map( s => s.idInfoServico ));
 
             // anexar pets ao objeto de resposta
             if (servList.length > 0) {
@@ -455,7 +477,9 @@ class ServicoRealizado {
                     return serv.idInfoServico;
                 });
 
+
                 const idListStr = idList.join(",");
+
                 const [ petServ ] = await conn.execute(
                     `SELECT id_pet_servico, id_pet, instrucao_alimentacao, id_info_servico FROM vw_pet_servico WHERE id_info_servico IN (${idListStr})`
                 );

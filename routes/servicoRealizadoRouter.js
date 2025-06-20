@@ -9,7 +9,7 @@ router.route('/')
 
 router.route('/:idServicoRealizado')
 .get(servicoRealizadoController.info)
-// .put(servicoRealizadoController.update)
+.put(servicoRealizadoController.update)
 // .delete(servicoRealizadoController.delete);
 
 module.exports = router;
