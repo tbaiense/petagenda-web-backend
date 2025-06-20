@@ -79,10 +79,59 @@ exports.list = (req, res, next) => {
         next(err);
     });};
 
-    exports.update = (req, res, next) => {
-        res.send("NOT IMPLEMENTED YET: cliente UPDATE");
-    };
+exports.update = async (req, res, next) => {
+    const id = +req.params.idCliente;
 
-    exports.delete = (req, res, next) => {
-        res.send("NOT IMPLEMENTED YET: cliente DELETE");
-    };
+    const {
+        nome, telefone, endereco, servicoRequerido
+    } = req.body;
+
+    let clienteEditado;
+    idEmpresa = Number(req.params.idEmpresa);
+    try {
+        clienteEditado = {
+            idEmpresa,
+            id,
+            nome, telefone, endereco, servicoRequerido
+        };
+        clienteEditado = new Cliente(clienteEditado);
+    } catch (err) {
+        err.message = "Erro ao instanciar objeto Cliente: " + err.message;
+        next(err);
+        return;
+    }
+
+    // Obtendo conexão
+    let conn;
+    try {
+        conn = await empresaDB.createConnection({ id: idEmpresa });
+    } catch (err) {
+        next(err);
+        return;
+    }
+
+    try {
+        // salvar no banco
+        await conn.query('START TRANSACTION');
+        const idCliente = await clienteEditado.save(conn);
+
+        await conn.query('COMMIT');
+        res.json({
+            success: true,
+            message: "Cliente atualizado com sucesso!",
+
+            cliente: {
+                id: idCliente
+            }
+        });
+    } catch (err) {
+        await conn.query('ROLLBACK');
+        next(err);
+    } finally {
+        conn.end();
+    }
+};
+
+exports.delete = (req, res, next) => {
+    res.send("NOT IMPLEMENTED YET: cliente DELETE");
+};
