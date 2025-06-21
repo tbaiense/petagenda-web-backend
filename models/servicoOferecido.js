@@ -58,7 +58,7 @@ class ServicoOferecido {
         }
 
         if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
-            options = { limit: 10, page: 0, useClass: false };
+            options = { limit: 1000, page: 0, useClass: false };
         }
 
         const { id, idEmpresa } = filter; // Object representando a servicoOferecido

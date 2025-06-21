@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 const empresaController = require('../controllers/empresaController');
 const licencaController = require('../controllers/licencaController');
 
+const relatorioRouter = require('./relatorioRouter');
 const servicoOferecidoRouter = require('./servicoOferecidoRouter');
 const funcionarioRouter = require('./funcionarioRouter');
 const clienteRouter = require('./clienteRouter');
@@ -44,6 +45,8 @@ router.route('/:idEmpresa/licenca')
     .post(licencaController.set)
     .put(licencaController.set);
 
+
+router.use('/:idEmpresa/relatorio', relatorioRouter);
 router.use('/:idEmpresa/servico-oferecido', servicoOferecidoRouter);
 router.use('/:idEmpresa/funcionario', funcionarioRouter);
 router.use('/:idEmpresa/cliente', clienteRouter);
