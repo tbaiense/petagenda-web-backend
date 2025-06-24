@@ -558,12 +558,13 @@ class Agendamento {
         }
 
         const { id, idEmpresa } = filter; // Object representando o Agendamento
-        const { limit, page, useClass } = options;
+        const { limit, page, useClass, ordenacao } = options;
 
         // Buscar no banco agendamentos
         let agendList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
         let qtdAgendamentos = 0;
+
         try {
             if (Number.isInteger(id)) {
                 const [ results ] = await conn.execute(
@@ -580,9 +581,35 @@ class Agendamento {
                     agendList = [ objAgend ];
                 }
             } else { // Buscar vários Agendamentos
-                const [ results ] = await conn.execute(
-                    `SELECT * FROM vw_agendamento ORDER BY id_agendamento DESC LIMIT ${limit} OFFSET ${limit * page}`
-                );
+                let sql, params;
+                if (filter.query) {
+                    let filterSQL = '';
+
+                    let orderSQL = 'id_agendamento DESC';
+
+                    switch (filter.option) {
+                        case 'cliente': {
+                            filterSQL += `nome_cliente LIKE '%${filter.query}%' `;
+
+                            orderSQL = `nome_cliente ${(options.ordenacao == 'ascending') ? 'ASC' : 'DESC'} `
+                        }
+                        default: {}
+                    }
+
+                    if (filter.estado) {
+                        filterSQL += `${(filter.option) ? 'AND' : ''} estado = '${filter.estado}'`;
+                    }
+
+                    sql = `SELECT * FROM vw_agendamento WHERE ${filterSQL} ORDER BY ${orderSQL} LIMIT ${limit} OFFSET ${limit * page}`;
+                    params = [filter.query];
+
+                    console.log('sql ', sql);
+
+                } else {
+                    sql = `SELECT * FROM vw_agendamento ORDER BY id_agendamento DESC LIMIT ${limit} OFFSET ${limit * page}`;
+                }
+
+                const [ results ] = await conn.execute(sql, params);
 
                 if (results.length > 0) {
                     qtdAgendamentos = results[0].qtd_agendamento;

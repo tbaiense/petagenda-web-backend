@@ -66,17 +66,21 @@ exports.info = (req, res, next) => {
 
 
 exports.list = (req, res, next) => {
+    const {
+        page,
+        limit,
+        query,
+        option
+    } = req.query;
 
     const filter = {
         idEmpresa: Number(req.params.idEmpresa),
+        query,
+        option
     };
 
-    const {
-        page,
-        limit
-    } = req.query;
-
     const options = {
+        ordenacao: req.query.ordenacao,
         limit: (Number.isInteger(+limit)) ? +limit : 5,
         page: (Number.isInteger(+page)) ? +page : 0
     };

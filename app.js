@@ -10,6 +10,7 @@ const { BIND_ADDRESS, BIND_PORT } = require('./envLoader');
 const app = express();
 
 // Utils middleware
+// app.set('query parser', 'extended');
 app.use(setHeaders);
 app.use(getJWT);
 

@@ -79,19 +79,28 @@ exports.info = (req, res, next) => {
     });
 };
 
-
+// ?query=Thiago+Moura+Baiense&option=cliente&order=ascending
 exports.list = (req, res, next) => {
-
-    const filter = {
-        idEmpresa: Number(req.params.idEmpresa),
-    };
 
     const {
         page,
-        limit
+        limit,
+        option,
+        order,
+        query
     } = req.query;
 
+    const filter = {
+        idEmpresa: Number(req.params.idEmpresa),
+        option,
+        query,
+        estado: req.query.estado
+    };
+
+    console.log(filter);
+
     const options = {
+        ordenacao: req.query.ordenacao,
         limit: (Number.isInteger(+limit)) ? +limit : 5,
         page: (Number.isInteger(+page)) ? +page : 0
     };
