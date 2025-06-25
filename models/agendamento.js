@@ -615,14 +615,11 @@ class Agendamento {
                         + `WHERE ${filterSQL} ORDER BY ${orderSQL} `
                         + `LIMIT ${limit} OFFSET ${limit * page}`;
 
-                    params = [filter.query];
-
-
                 } else {
                     sql = `SELECT * FROM vw_agendamento ORDER BY id_agendamento DESC LIMIT ${limit} OFFSET ${limit * page}`;
                 }
 
-                const [ results ] = await conn.execute(sql, params);
+                const [ results ] = await conn.execute(sql);
 
                 if (results.length > 0) {
                     qtdAgendamentos = results[0].qtd_agendamento;

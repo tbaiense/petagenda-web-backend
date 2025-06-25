@@ -61,8 +61,20 @@ class Cliente {
             filter.id = undefined;
         }
 
-        if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
-            options = { limit: 10000, page: 0, useClass: false };
+        if (!options) {
+            options = {};
+        }
+
+        if (!Number.isInteger(options.limit)) {
+            options.limit = 1000;
+        }
+
+        if (!Number.isInteger(options.page)) {
+            options.page = 0;
+        }
+
+        if (typeof options.useClass != 'boolean') {
+            options.useClass = false;
         }
 
         const { id, idEmpresa } = filter; // Object representando a Cliente
@@ -71,6 +83,7 @@ class Cliente {
         // Buscar no banco clientes
         let cliList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
+        console.log(filter, options);
 
         try {
             if (Number.isInteger(id)) {
@@ -83,9 +96,33 @@ class Cliente {
                     cliList = [ useClass ? new Cliente(objCli) : objCli ];
                 }
             } else { // Buscar várias Clientes
-                const [ results ] = await conn.execute(
-                    `SELECT * FROM vw_cliente ORDER BY id_cliente DESC LIMIT ${limit} OFFSET ${limit * page}`
-                );
+                let orderSQL = 'ORDER BY ';
+                let filterSQL = 'WHERE ';
+
+                if (filter.query && filter.option) {
+                    switch(filter.option) {
+                        case 'nome': {
+                            filterSQL += `nome LIKE '%${filter.query}%' `;
+
+                            if (options.ordenacao) {
+                                orderSQL += `nome ${(options.ordenacao != 'ascending') ? 'DESC' : 'ASC'}`;
+                            }
+
+                            break;
+                        }
+                        default: {}
+                    }
+                } else {
+                    filterSQL = '';
+                }
+
+                if (!options.ordenacao) {
+                    orderSQL += 'id_cliente DESC';
+                }
+
+                const sql = `SELECT * FROM vw_cliente ${filterSQL} ${orderSQL} LIMIT ${limit} OFFSET ${limit * page}`
+
+                const [ results ] = await conn.execute(sql);
 
                 if (results.length > 0) {
                     cliList = results.map( cli => {

@@ -69,7 +69,16 @@ exports.info = (req, res, next) => {
 };
 
 exports.list = (req, res, next) => {
-    Cliente.find({ idEmpresa: Number(req.params.idEmpresa)})
+    const options = {
+        ordenacao: req.query.ordenacao
+    };
+
+    const filter = {
+        query: req.query.query,
+        option: req.query.option
+    };
+
+    Cliente.find({ idEmpresa: Number(req.params.idEmpresa), ...filter}, options)
     .then( cliList => {
         if (cliList.length == 0) res.status(404);
 
