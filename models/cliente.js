@@ -83,7 +83,6 @@ class Cliente {
         // Buscar no banco clientes
         let cliList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
-        console.log(filter, options);
 
         try {
             if (Number.isInteger(id)) {
@@ -96,16 +95,16 @@ class Cliente {
                     cliList = [ useClass ? new Cliente(objCli) : objCli ];
                 }
             } else { // Buscar várias Clientes
-                let orderSQL = 'ORDER BY ';
-                let filterSQL = 'WHERE ';
+                let orderSQL = '';
+                let filterSQL = '';
 
-                if (filter.query && filter.option) {
+                if (filter.option) {
                     switch(filter.option) {
                         case 'nome': {
-                            filterSQL += `nome LIKE '%${filter.query}%' `;
+                            filterSQL += `WHERE nome LIKE '${filter.query}%' OR nome LIKE '%${filter.query}%' `;
 
                             if (options.ordenacao) {
-                                orderSQL += `nome ${(options.ordenacao != 'ascending') ? 'DESC' : 'ASC'}`;
+                                orderSQL += `ORDER BY nome ${(options.ordenacao != 'ascending') ? 'DESC' : 'ASC'}`;
                             }
 
                             break;
@@ -114,10 +113,6 @@ class Cliente {
                     }
                 } else {
                     filterSQL = '';
-                }
-
-                if (!options.ordenacao) {
-                    orderSQL += 'id_cliente DESC';
                 }
 
                 const sql = `SELECT * FROM vw_cliente ${filterSQL} ${orderSQL} LIMIT ${limit} OFFSET ${limit * page}`

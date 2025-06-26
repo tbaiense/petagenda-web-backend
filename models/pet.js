@@ -387,9 +387,34 @@ class Pet {
                     });
                 }
             } else { // Buscar vários Pets
-                const [ results ] = await conn.execute(
-                    `SELECT * FROM vw_pet ORDER BY id_pet DESC LIMIT ${limit} OFFSET ${limit * page}`
-                );
+                let orderSQL = '';
+                let filterSQL = '';
+
+                if (filter.option) {
+                    switch(filter.option) {
+                        case 'nome': {
+                            filterSQL += `WHERE nome LIKE '%${filter.query}%' `;
+
+                            if (options.ordenacao) {
+                                orderSQL += `ORDER BY nome ${(options.ordenacao != 'ascending') ? 'DESC' : 'ASC'}`;
+                            }
+
+                            break;
+                        }
+                        default: {}
+                    }
+
+                    if (filter.especie) {
+                        filterSQL += `${filter.option ? 'AND' : ''}  id_especie = ${filter.especie} `;
+                    }
+                } else {
+                    filterSQL = '';
+                }
+
+                const sql = `SELECT * FROM vw_pet ${filterSQL} ${orderSQL} LIMIT ${limit} OFFSET ${limit * page}`
+
+                const [ results ] = await conn.execute(sql);
+
 
                 if (results.length > 0) {
                     petList = results.map( emp => {

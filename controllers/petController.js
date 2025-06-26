@@ -89,14 +89,19 @@ exports.info = (req, res, next) => {
 exports.list = (req, res, next) => {
     const idCliente = Number(req.query.idCliente);
 
-    const options = {};
+    const options = {
+        ordenacao: req.query.ordenacao
+    };
 
     const filter = {
         idEmpresa: Number(req.params.idEmpresa),
         idCliente: (idCliente) ? idCliente : Number(req.params.idCliente),
+        query: req.query.query,
+        option: req.query.option,
+        especie: req.query.especie
     };
 
-    Pet.find(filter)
+    Pet.find(filter, options)
     .then( petList => {
         if (petList.length == 0) res.status(404);
 

@@ -377,7 +377,6 @@ class ServicoRealizado {
                 );
 
                 idResponse = results[0][0].id_servico_realizado;
-                // console.log(results);
                 this.id = idResponse;
             } else {
                 const [ results ] = await conn.execute(
@@ -437,7 +436,6 @@ class ServicoRealizado {
         let servList = [];
         const conn = await empresaDB.createConnection({ id: idEmpresa });
         let qtdServicosRealizados;
-        console.log('options: ', options);
         try {
             if (Number.isInteger(id)) {
                 const [ results ] = await conn.execute(
@@ -445,7 +443,6 @@ class ServicoRealizado {
                     [id]
                 );
                 if (results.length > 0) {
-                    console.log('results: ', results );
                     qtdServicosRealizados = results[0].qtd_servico_realizado;
 
                     const objServReal = ServicoRealizado.fromResultSet(results[0]);
@@ -485,8 +482,6 @@ class ServicoRealizado {
 
                     params = [filter.query];
 
-                    console.log('sql ', sql);
-
                 } else {
                     sql = `SELECT * FROM vw_servico_realizado ORDER BY id_servico_realizado DESC LIMIT ${limit} OFFSET ${limit * page}`;
                 }
@@ -504,7 +499,6 @@ class ServicoRealizado {
                     });
                 }
             }
-            console.log('servList: ', servList.map( s => s.idInfoServico ));
 
             // anexar pets ao objeto de resposta
             if (servList.length > 0) {
