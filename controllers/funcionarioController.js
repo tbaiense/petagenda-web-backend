@@ -71,7 +71,17 @@ exports.info = (req, res, next) => {
 };
 
 exports.list = (req, res, next) => {
-    Funcionario.find({ idEmpresa: Number(req.params.idEmpresa)})
+    const filter = {
+        idEmpresa: Number(req.params.idEmpresa),
+        query: req.query.query,
+        option: req.query.option
+    };
+
+    const options = {
+        ordenacao: req.query.ordenacao
+    };
+
+    Funcionario.find(filter, options)
     .then( funcList => {
         if (funcList.length == 0) res.status(404);
 

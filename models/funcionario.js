@@ -46,8 +46,21 @@ class Funcionario {
             filter.id = undefined;
         }
 
-        if (!options || (!Number.isInteger(options.limit) || !Number.isInteger(options.page))) {
-            options = { limit: 10, page: 0, useClass: false };
+
+        if (!options) {
+            options = {};
+        }
+
+        if (!Number.isInteger(options.limit)) {
+            options.limit = 1000;
+        }
+
+        if (!Number.isInteger(options.page)) {
+            options.page = 0;
+        }
+
+        if (typeof options.useClass != 'boolean') {
+            options.useClass = false;
         }
 
         const { id, idEmpresa } = filter; // Object representando a Funcionario
@@ -68,9 +81,30 @@ class Funcionario {
                     funcList = [ useClass ? new Funcionario(objFunc) : objFunc ];
                 }
             } else { // Buscar várias Funcionarios
-                const [ results ] = await conn.execute(
-                    `SELECT id AS id_funcionario, nome, telefone FROM funcionario ORDER BY id DESC`/* LIMIT ${limit} OFFSET ${limit * page}`*/
-                );
+                let orderSQL = '';
+                let filterSQL = '';
+
+                if (filter.option) {
+                    switch(filter.option) {
+                        case 'nome': {
+                            filterSQL += `WHERE nome LIKE '${filter.query}%' OR nome LIKE '%${filter.query}%' `;
+
+                            if (options.ordenacao) {
+                                orderSQL += `ORDER BY nome ${(options.ordenacao != 'ascending') ? 'DESC' : 'ASC'}`;
+                            }
+
+                            break;
+                        }
+                        default: {}
+                    }
+                } else {
+                    filterSQL = '';
+                }
+
+                const sql = `SELECT id AS id_funcionario, nome, telefone FROM funcionario ${filterSQL} ${orderSQL} LIMIT ${limit} OFFSET ${limit * page}`
+                console.log('sql ', sql);
+                console.log(filter, options);
+                const [ results ] = await conn.execute(sql);
 
                 if (results.length > 0) {
                     funcList = results.map( emp => {
