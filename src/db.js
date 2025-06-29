@@ -22,13 +22,13 @@ if (!MYSQL_CLIENT_PATH) {
 const EMPRESA_SCHEMA_BASE_SCRIPT = path.join(SQL_DIR, 'empresa_schema.sql')
 
 // Lendo script de criação de SCHEMA
-let baseScriptContent;
-try {
-    baseScriptContent = fsCb.readFileSync(EMPRESA_SCHEMA_BASE_SCRIPT, {encoding: 'utf8', flag: 'r'});
-} catch (err) {
-    err.message = 'Falha ao ler conteúdo do script base de empresa: ' + err.message;
-    throw err;
-}
+//let baseScriptContent;
+//try {
+    //baseScriptContent = fsCb.readFileSync(EMPRESA_SCHEMA_BASE_SCRIPT, {encoding: 'utf8', flag: 'r'});
+//} catch (err) {
+    //err.message = 'Falha ao ler conteúdo do script base de empresa: ' + err.message;
+    //throw err;
+//}
 
 const config = {
     host: DB_HOST,
@@ -71,26 +71,30 @@ const empresa = {
             const plat = os.platform();
     
             // Alterando arquivo para criar SCHEMA de acordo com ID da empresa
-            const newScriptContent = baseScriptContent.replace(/emp_\?/g, schemaName);
+            //const newScriptContent = baseScriptContent.replace(/emp_\?/g, schemaName);
 
             // Salvando script temporáriamente
-            const EMPRESA_SCHEMA_NEW_SCRIPT = path.join(SQL_TMP_DIR, `${idEmpresa}.sql`);
+            //const EMPRESA_SCHEMA_NEW_SCRIPT = path.join(SQL_TMP_DIR, `${idEmpresa}.sql`);
     
-            newScriptHandle = await fs.open(EMPRESA_SCHEMA_NEW_SCRIPT, 'w');
-            await fs.writeFile(newScriptHandle, newScriptContent);
+            //newScriptHandle = await fs.open(EMPRESA_SCHEMA_NEW_SCRIPT, 'w');
+            //await fs.writeFile(newScriptHandle, newScriptContent);
     
-            newScriptHandle?.close();
+            //newScriptHandle?.close();
 
             const mysqlPath = MYSQL_CLIENT_PATH ?? 'mysql';
             let cmd;
             if (plat == 'linux') {
-                cmd = shell.spawnSync('mysql', ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4','-e', `source ${EMPRESA_SCHEMA_NEW_SCRIPT}`]);
+                cmd = shell.spawnSync('mysql', ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4','-e', `CREATE SCHEMA ${schemaName}; USE ${schemaName}; source ${EMPRESA_SCHEMA_BASE_SCRIPT}`]);
             } else if (plat == 'win32') {
-                cmd = shell.spawnSync(mysqlPath, ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4', '-e', `source ${EMPRESA_SCHEMA_NEW_SCRIPT}`]);
+                cmd = shell.spawnSync(mysqlPath, ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4', '-e', `CREATE SCHEMA ${schemaName}; USE ${schemaName}; source ${EMPRESA_SCHEMA_BASE_SCRIPT}`]);
             } else {
                 throw new Error("Sistema operacional não suportado pelo back-end");
             }
-            await fs.unlink(EMPRESA_SCHEMA_NEW_SCRIPT);
+            console.log('cmd', cmd);
+            console.log('schemaName', schemaName);
+            console.log('EMPRESA_SCHEMA_BASE_SCRIPT', EMPRESA_SCHEMA_BASE_SCRIPT);
+            
+            //await fs.unlink(EMPRESA_SCHEMA_NEW_SCRIPT);
             if (cmd.status) {
                 //console.log(cmd.stdout);
                 throw new Error(`Falha ao executar cliente MySQL (erro cmd código ${cmd.status}):\n${cmd.stderr}\nVerifique o PATH e tente novamente'`);

@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "dev": "export $(cat .env) && nodemon app.js"
+    "dev": "export $(cat .env) && nodemon src/app.js",
+    "prod": "node src/app.js"
   },
   "keywords": [],
   "author": "",
