@@ -84,9 +84,9 @@ const empresa = {
             const mysqlPath = MYSQL_CLIENT_PATH ?? 'mysql';
             let cmd;
             if (plat == 'linux') {
-                cmd = shell.spawnSync('mysql', ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4','-e', `CREATE SCHEMA ${schemaName}; USE ${schemaName}; source ${EMPRESA_SCHEMA_BASE_SCRIPT}`]);
+                cmd = shell.spawnSync('mysql', ['--defaults-extra-file=/petagenda/sql/client.cnf', '--default-character-set=utf8mb4','-e', `CREATE SCHEMA ${schemaName}; USE ${schemaName}; source ${EMPRESA_SCHEMA_BASE_SCRIPT}`]);
             } else if (plat == 'win32') {
-                cmd = shell.spawnSync(mysqlPath, ['-u', config.user, `-p${config.password}`, '-h', config.host, '--default-character-set=utf8mb4', '-e', `CREATE SCHEMA ${schemaName}; USE ${schemaName}; source ${EMPRESA_SCHEMA_BASE_SCRIPT}`]);
+                cmd = shell.spawnSync(mysqlPath, ['--defaults-extra-file=/petagenda/sql/client.cnf', '--default-character-set=utf8mb4', '-e', `CREATE SCHEMA ${schemaName}; USE ${schemaName}; source ${EMPRESA_SCHEMA_BASE_SCRIPT}`]);
             } else {
                 throw new Error("Sistema operacional não suportado pelo back-end");
             }
