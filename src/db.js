@@ -96,8 +96,9 @@ const empresa = {
             
             //await fs.unlink(EMPRESA_SCHEMA_NEW_SCRIPT);
             if (cmd.status) {
-                //console.log(cmd.stdout);
-                throw new Error(`Falha ao executar cliente MySQL (erro cmd código ${cmd.status}):\n${cmd.stderr}\nVerifique o PATH e tente novamente'`);
+                const msgBuff = cmd.stderr;
+                console.log('mensagem de criacao: ', msgBuff.toString());
+                // throw new Error(`Falha ao executar cliente MySQL (erro cmd código ${cmd.status}):\n${cmd.stderr}\nVerifique o PATH e tente novamente'`);
             }
 
         } catch (err) {
