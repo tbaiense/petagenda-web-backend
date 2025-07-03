@@ -595,7 +595,10 @@ class ServicoRealizado {
             "idInfoServico": rs.id_info_servico,
             "inicio": rs.dt_hr_inicio,
             "fim": rs.dt_hr_fim,
-            "servico": { "id": rs.id_servico_oferecido },
+            "servico": {
+                "id": rs.id_servico_oferecido,
+                "nome": rs.nome_servico_oferecido
+            },
             "valor": {
                 "servico": rs.valor_servico ?? 0,
                 "pets": (!rs.valor_servico && rs.valor_total) ? rs.valor_total : 0,
